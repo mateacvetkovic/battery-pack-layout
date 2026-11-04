@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.path import Path
 from matplotlib.patches import Polygon
-
+import numpy as np
 plt.ion()  
 
 
@@ -192,3 +192,60 @@ def plotBridges(cells, W, H, d, cell_to_group, no_groups, save=False, show=True,
     )
 
     _finalize_plot(ax, W, H, title, save, name, show)
+
+
+
+def _face(group, side):
+    """Strana paketa na kojoj je stezaljka. Parne grupe: p gore, n dolje; neparne su okrenute, pa obrnuto.
+    Zato su mostovi između grupa naizmjence gore i dolje, a most ima obje stezaljke na istoj strani."""
+    return 'top' if (side == 'p') == (group % 2 == 0) else 'bottom'
+ 
+ 
+def draw_bridges(sol, bridges, currents=None, pairs=None, face=None, save=False, name='bridges.png', show=True, label='struja mosta'):
+    """
+    Crta raspored ćelija (kao sol.display) i preko njega mostove iz all_bridges(...), zasebno za gornju i donju
+    stranu paketa (face='top' ili 'bottom'; None = dvije slike). Konvencija: parne grupe imaju p stezaljku gore.
+    Donja strana nije zrcaljena, ćelije su na istim mjestima kao na gornjoj slici.
+      bridges:  lista mostova ({'a': [cell, side], 'b': [cell, side], 'length': d})
+      currents: neobavezno, solve(...)['bridge_currents']; ako je zadano, boja mosta = struja, inače zeleno = unutar grupe, crno = između grupa
+      pairs:    lista indeksa g (par g -> g+1) koje treba nacrtati, None = svi parovi
+      label:    natpis uz traku boja, npr. 'omjer prema nazivnoj struji ćelije' ako šalješ currents / nominal_current
+      name:     kod dviju slika dobiju nastavak _top i _bottom
+    Linije idu od središta do središta ćelije. Most između grupa ima točkice na krajevima.
+    """
+    for f in (['top', 'bottom'] if face is None else [face]):
+        _draw_face(sol, bridges, currents, pairs, f, save, name.replace('.png', f'_{f}.png') if face is None else name, show, label)
+ 
+ 
+def _draw_face(sol, bridges, currents, pairs, face, save, name, show, label):
+    pack, cg = sol.pack, sol.cell_to_group
+    cells = pack.grid.cells
+    title = f'Mostovi, {"gornja" if face == "top" else "donja"} strana: {pack.no_groups}S {pack.no_cells_per_group}P'
+    plotGroups(cells, pack.grid.W, pack.grid.H, pack.d, cg, pack.no_groups, title=title,
+               cell_d=pack.cell_d, vertices=pack.vertices, save=False, show=False)
+    ax = plt.gca()
+    if currents is not None:
+        cmap, norm = plt.cm.plasma_r, plt.Normalize(0, max(currents))
+ 
+    for i, b in enumerate(bridges):
+        (u, su), (v, sv) = b['a'], b['b']
+        if _face(cg[u], su) != face:
+            continue
+        if pairs is not None and (cg[u] if su == 'n' else cg[u] - 1) not in pairs:
+            continue
+        intra = cg[u] == cg[v]
+        colour = cmap(norm(currents[i])) if currents is not None else ('tab:green' if intra else 'black')  # crvena izbjegnuta: rezervirana za preopterećenje
+        ax.plot([cells[u].x, cells[v].x], [cells[u].y, cells[v].y], color=colour, lw=2.5, solid_capstyle='round',
+                zorder=5, marker=None if intra else 'o', markersize=4)  # zorder ispod oznaka grupa (6)
+ 
+    if currents is not None:
+        plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), ax=ax, label=label, orientation='horizontal', pad=0.12, shrink=0.6)  # ispod slike, da ne prekrije legendu
+        ax.set_title(title + '  (boja = struja mosta)', fontsize=14)
+    else:
+        ax.set_title(title + '  (zeleno = unutar grupe, crno = između grupa)', fontsize=12)
+    if save:
+        plt.savefig(name, bbox_inches='tight')
+    if show:
+        plt.draw()
+        plt.pause(0.1)
+ 

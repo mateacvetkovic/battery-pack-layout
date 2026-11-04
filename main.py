@@ -4,13 +4,15 @@ import numpy as np
 from datetime import datetime
 
 import matplotlib.pyplot as plt
-
+import pickle
 from src.kod.grids import HexGrid, RectangularGrid
 from src.kod.containers import TriangleContainer
 from src.kod.BatteryPack import BatteryPack
 from src.kod.BatterySolution import BatterySolution
 from src.kod.optimizers import TriangleContainerOptimizer
 from src.kod.IALG import ClonalgOptimizer
+from src.kod.bridges import all_bridges, save_solution, load_solution, solve, print_result
+from src.kod.visuals import draw_bridges
 
 CELL_SPECS = {
     '18650': {'diameter': 18, 'nominal_voltage': 3.6}, # mm, V
@@ -20,6 +22,17 @@ CELL_SPECS = {
 ALLOWED_NET_TYPES = ['saćasti', 'pravokutni']
 ALLOWED_CELL_TYPES = ['18650', '21700']
 
+def save_battery_solution(solution, inputs, path):
+    """Sprema BatterySolution (paket je unutar njega) i unose korisnika u jednu .pkl datoteku, uz sliku istog imena."""
+    with open(path, 'wb') as f:
+        pickle.dump({'solution': solution, 'inputs': inputs}, f)
+
+
+def load_battery_solution(path):
+    """Vraća (solution, inputs) iz datoteke koju je napravila save_battery_solution."""
+    with open(path, 'rb') as f:
+        data = pickle.load(f)
+    return data['solution'], data['inputs']
 
 def get_user_inputs():
     print("=" * 60)
@@ -260,7 +273,8 @@ def run_optimization(pack, inputs):
                 best_sol_ever = best_solution
 
             file_name_it = f"{file_name}_it{i+1}_id{id}.png"
-
+            file_name_it_sol= file_name_it.replace('.png', '.pkl').replace('slike','rjesenja')
+            save_battery_solution(best_solution, inputs,  file_name_it_sol)
             # print(f"\n-> Ukupna ocjena kvalitete paketa (Fitness): {fitness_val:.2f}")  
             # print(f"-> Minimalan broj direktnih spojeva između ikojih susjednih grupa: {eval_info['min_bridges']}")  
             # print(f"-> Ukupan broj direktnih serijskih spojeva u paketu/idealan broj spojeva: {eval_info['total_bridges']}/{pack.no_cells_per_group*(pack.no_groups-1)}")  
@@ -285,6 +299,11 @@ def run_optimization(pack, inputs):
             print("\nGeneriranje grafičkog prikaza konačnog paketa...")
             if (id==0):
                 best_solution.display(save=True, name=file_name_it)
+                bridges = all_bridges(best_solution.pack, best_solution.cell_to_group)
+                result = solve(best_solution.cell_to_group, bridges, r_cell=1.0, r_per_length=0.01, I=8)
+                print_result(result,bridges)
+                nom = result['nominal_current']
+                draw_bridges(best_solution, bridges, currents=[c / nom for c in result['bridge_currents']], label='struja mosta / nazivna struja ćelije (I/P)', save=True, name=file_name_it+'_mostovi.png', show=False)
             else:
                 best_solution.display(save=True, show=False,name=file_name_it)
             print(f"-> Slika spremljena na lokaciju: {os.path.join(current_dir, file_name_it)}")
