@@ -729,7 +729,7 @@ class BatterySolution:
         total_bridges = sum(bridge_counts) if bridge_counts else 0
         bridge_variance = float(np.var(bridge_counts)) if bridge_counts else 0.0
 
-        worst_group = min(group_total_bridges, key=group_total_bridges.get) if group_total_bridges else None
+        worst_group = worst_group = min(group_total_bridges, key=lambda g: group_total_bridges[g] / group_count[g]) if group_total_bridges else None
         worst_connection = min(connection_results, key=lambda k: connection_results[k]['bridge_score']) if connection_results else None
 
         return {
