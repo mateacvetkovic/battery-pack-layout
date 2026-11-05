@@ -201,7 +201,7 @@ def _face(group, side):
     return 'top' if (side == 'p') == (group % 2 == 0) else 'bottom'
  
  
-def draw_bridges(sol, bridges, currents=None, pairs=None, face=None, save=False, name='bridges.png', show=True, label='struja mosta'):
+def draw_bridges(sol, bridges, currents=None, pairs=None, face=None, save=False, name='bridges.png', show=True, label='struja mosta', vmax=None):
     """
     Crta raspored ćelija (kao sol.display) i preko njega mostove iz all_bridges(...), zasebno za gornju i donju
     stranu paketa (face='top' ili 'bottom'; None = dvije slike). Konvencija: parne grupe imaju p stezaljku gore.
@@ -210,14 +210,16 @@ def draw_bridges(sol, bridges, currents=None, pairs=None, face=None, save=False,
       currents: neobavezno, solve(...)['bridge_currents']; ako je zadano, boja mosta = struja, inače zeleno = unutar grupe, crno = između grupa
       pairs:    lista indeksa g (par g -> g+1) koje treba nacrtati, None = svi parovi
       label:    natpis uz traku boja, npr. 'omjer prema nazivnoj struji ćelije' ako šalješ currents / nominal_current
+      vmax:     gornja granica skale boja (donja je 0); None = najveća vrijednost u currents. Fiksan vmax daje iste boje na svim
+                slikama, pa se mogu uspoređivati; vrijednosti iznad vmax dobiju najtamniju boju
       name:     kod dviju slika dobiju nastavak _top i _bottom
     Linije idu od središta do središta ćelije. Most između grupa ima točkice na krajevima.
     """
     for f in (['top', 'bottom'] if face is None else [face]):
-        _draw_face(sol, bridges, currents, pairs, f, save, name.replace('.png', f'_{f}.png') if face is None else name, show, label)
+        _draw_face(sol, bridges, currents, pairs, f, save, name.replace('.png', f'_{f}.png') if face is None else name, show, label, vmax)
  
  
-def _draw_face(sol, bridges, currents, pairs, face, save, name, show, label):
+def _draw_face(sol, bridges, currents, pairs, face, save, name, show, label, vmax=None):
     pack, cg = sol.pack, sol.cell_to_group
     cells = pack.grid.cells
     title = f'Mostovi, {"gornja" if face == "top" else "donja"} strana: {pack.no_groups}S {pack.no_cells_per_group}P'
@@ -225,7 +227,7 @@ def _draw_face(sol, bridges, currents, pairs, face, save, name, show, label):
                cell_d=pack.cell_d, vertices=pack.vertices, save=False, show=False)
     ax = plt.gca()
     if currents is not None:
-        cmap, norm = plt.cm.plasma_r, plt.Normalize(0, max(currents))
+        cmap, norm = plt.cm.plasma_r, plt.Normalize(0, vmax if vmax is not None else max(currents), clip=True)
  
     for i, b in enumerate(bridges):
         (u, su), (v, sv) = b['a'], b['b']

@@ -91,28 +91,34 @@ def solve(cell_to_group, bridges, r_cell, r_per_length, I):
 
 
 # ---------- 4. result: print and save ----------
-def print_result(result, bridges, top=5, top_cells=5, idle=0.05):
+def print_result(result, bridges, top=5, top_cells=5, idle=0.05, junction=None):
     """Ispisuje ukupni otpor, statistiku po skupinama (ćelije, mostovi između grupa, mostovi unutar grupe),
     `top_cells` najopterećenijih ćelija i `top` najopterećenijih mostova (između kojih ćelija).
     Faktor vršnosti = max / prosjek; 'gotovo bez struje' = omjer ispod `idle` (nazivne struje ćelije)."""
     cc, bc, nom = result['cell_currents'], result['bridge_currents'], result['nominal_current']
     skip = set(result['shorted_bridges'])  # idealni krajevi nose 0 po pretpostavci, ne ulaze u statistiku
     print(f"R_total = {result['R_total']:.4f}, nazivna struja ćelije I/P = {nom:.4g} (omjeri niže su struja / I/P)")
- 
-    def stat(naziv, ratios, with_idle):
+
+    def stat(naziv, ratios, with_idle, with_std=False):
         mean, mx = sum(ratios) / len(ratios), max(ratios)
-        extra = f", gotovo bez struje (< {idle:.0%}): {sum(r < idle for r in ratios) / len(ratios):.0%}" if with_idle else ""
-        print(f"  {naziv} ({len(ratios)}): prosjek {mean:.3f}, max {mx:.3f}, faktor vršnosti {mx / mean:.2f}{extra}")
- 
+        extra = f", stdev {np.std(ratios):.3f}" if with_std else ""
+        extra += f", gotovo bez struje (< {idle:.0%}): {sum(r < idle for r in ratios) / len(ratios):.0%}" if with_idle else ""
+        print(f"  {naziv} ({len(ratios)}): prosjek {mean:.3f}, max {mx:.3f}, faktor vršnosti {mx / mean:.3f}{extra}")
+
     print("statistika (omjeri prema nazivnoj struji):")
-    stat('ćelije', [c / nom for c in cc.values()], False)
+    stat('ćelije', [c / nom for c in cc.values()], False, True)
     between = [bc[i] / nom for i, b in enumerate(bridges) if i not in skip and b['a'][1] != b['b'][1]]
     within = [bc[i] / nom for i, b in enumerate(bridges) if i not in skip and b['a'][1] == b['b'][1]]
-    stat('mostovi između grupa', between, True)
-    stat('mostovi unutar grupe', within, True)
+    stat('mostovi između grupa', between, True, True)
+    stat('mostovi unutar grupe', within, True, True)
     if skip:
         print(f"  (bez {len(skip)} mostova na idealnim krajevima paketa, struja 0 po pretpostavci)")
- 
+    if junction:
+        worst = max(junction, key=lambda g: junction[g]['total'])
+        print("procjena otpora spoja (granični mostovi paralelno + veći od dva puta do najdalje ćelije):")
+        for g in sorted(junction):
+            j = junction[g]
+            print(f"  G{g} - G{g + 1}: {j['total']:.4f} = granica {j['border']:.4f} + max(G{g} {j['far_a']:.4f}, G{g + 1} {j['far_b']:.4f})" + ("   <- najveći" if g == worst else ""))    
     lo = min(cc, key=cc.get)
     print(f"najopterećenije ćelije (najmanje opterećena: ćelija {lo}, omjer {cc[lo] / nom:.3f}):")
     for c in sorted(cc, key=cc.get, reverse=True)[:top_cells]:
@@ -121,19 +127,51 @@ def print_result(result, bridges, top=5, top_cells=5, idle=0.05):
     for i in sorted(range(len(bc)), key=lambda i: -bc[i])[:top]:
         (c1, s1), (c2, s2) = bridges[i]['a'], bridges[i]['b']
         print(f"  most {i}: ćelija {c1} ({s1}) - ćelija {c2} ({s2}), omjer {bc[i] / nom:.3f}  (struja {bc[i]:.4g})")
- 
+
+
 def save_result(path, result):
     """Sprema rezultat solve-a u JSON (ključevi ćelija postaju stringovi)."""
     json.dump(result, open(path, 'w'))
 
 
-def export_spice(path, cell_to_group, bridges, r_cell, r_per_length, I):
-    """Piše SPICE netlistu (LTspice, ngspice) iste mreže, za provjeru u drugom softveru. OUT je čvor 0 (masa),
-    struja I se ubacuje u IN. Otpornici između istog čvora (mostovi na idealnim krajevima) se preskaču, nose 0."""
-    lines = ['* mreza paketa: Rc = ćelije, Rb = mostovi', f'I1 0 IN DC {I}']
-    for a, b, r, (kind, k) in _resistors(cell_to_group, bridges, r_cell, r_per_length):
-        if a != b:
-            lines.append(f"R{'c' if kind == 'cell' else 'b'}{k} {'0' if a == 'OUT' else a} {'0' if b == 'OUT' else b} {r}")
-    lines += ['.op', '.end']
-    open(path, 'w').write('\n'.join(lines) + '\n')
+def junction_estimate(bridges, cell_to_group, r_per_length):
+    """Procjena otpora spoja grupa g i g+1 bez solvera (ne treba struje):
+      'border' = paralelni otpor svih graničnih mostova = 1 / Σ(1/R_k)
+      'far_a'  = otpor najkraćeg puta (preko mostova unutar grupe g, n strana) od najbližeg graničnog mosta do najdalje ćelije g
+      'far_b'  = isto za grupu g+1 (p strana)
+      'total'  = border + max(far_a, far_b)
+    Najkraći put je jedan put (paralelni putovi se ne računaju), pa far_* je gornja ocjena. Ćelije do kojih mostovi unutar grupe
+    ne vode (nema puta od granice) ne ulaze u max."""
+    import heapq
+    ctg = cell_to_group
+    R = lambda b: r_per_length * b['length']
  
+    def far(group, side, sources):
+        adj = {}
+        for b in bridges:
+            (c1, s1), (c2, s2) = b['a'], b['b']
+            if s1 == s2 == side and ctg[c1] == ctg[c2] == group:
+                adj.setdefault(c1, []).append((c2, R(b)))
+                adj.setdefault(c2, []).append((c1, R(b)))
+        dist = {c: 0.0 for c in sources}
+        heap = [(0.0, c) for c in sources]
+        while heap:
+            d, c = heapq.heappop(heap)
+            if d > dist[c]:
+                continue
+            for m, r in adj.get(c, []):
+                if d + r < dist.get(m, float('inf')):
+                    dist[m] = d + r
+                    heapq.heappush(heap, (d + r, m))
+        return max(dist.values())
+ 
+    out = {}
+    for g in range(max(ctg)):
+        border = [b for b in bridges if b['a'][1] == 'n' and b['b'][1] == 'p' and ctg[b['a'][0]] == g and ctg[b['b'][0]] == g + 1]
+        if not border:
+            continue
+        r_border = 1 / sum(1 / R(b) for b in border)
+        far_a = far(g, 'n', {b['a'][0] for b in border})
+        far_b = far(g + 1, 'p', {b['b'][0] for b in border})
+        out[g] = {'border': r_border, 'far_a': far_a, 'far_b': far_b, 'total': r_border + max(far_a, far_b)}
+    return out

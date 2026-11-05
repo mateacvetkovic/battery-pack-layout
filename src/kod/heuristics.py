@@ -123,6 +123,35 @@ def snake_pattern_bottom_up(pack):
 
     return sol
 
+def snake_pattern_row_pairs(pack):
+    """Rjesenje u snake uzorku po dva reda: par redova se puni stupac po stupac (gore pa dolje),
+    prvi par slijeva nadesno, drugi zdesna nalijevo itd. Za P=4 grupe su blokovi 2x2.
+
+    Vraca:
+        BatterySolution | None: generirano rjesenje ili None ako je mreza prazna.
+    """
+    if not pack.grid.cells:
+        return None
+
+    sol = BatterySolution(pack)
+    ordered_cells = []
+    num_rows, num_cols = pack.grid.cell_matrix.shape
+
+    for i in range(0, num_rows, 2):
+        # parni parovi redova slijeva nadesno, neparni zdesna nalijevo
+        cols = range(num_cols) if (i // 2) % 2 == 0 else range(num_cols - 1, -1, -1)
+        for j in cols:
+            for r in (i, i + 1):
+                if r < num_rows and pack.grid.cell_matrix[r, j] is not None:
+                    ordered_cells.append(pack.grid.cell_matrix[r, j])
+
+    total_needed = pack.no_groups * pack.no_cells_per_group
+    for idx, cell in enumerate(ordered_cells):
+        if idx < total_needed:
+            sol.assign_cell_to_group(cell.id, idx // pack.no_cells_per_group)
+
+    return sol
+
 def max_shared_boundary_distance_based_universal(
     pack,
     void_id=-1,

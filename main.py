@@ -11,9 +11,9 @@ from src.kod.BatteryPack import BatteryPack
 from src.kod.BatterySolution import BatterySolution
 from src.kod.optimizers import TriangleContainerOptimizer
 from src.kod.IALG import ClonalgOptimizer
-from src.kod.bridges import all_bridges, save_solution, load_solution, solve, print_result
+from src.kod.bridges import all_bridges, save_solution, load_solution, solve, print_result, junction_estimate
 from src.kod.visuals import draw_bridges
-
+from src.kod.heuristics import snake_pattern_row_pairs, snake_pattern_rows
 CELL_SPECS = {
     '18650': {'diameter': 18, 'nominal_voltage': 3.6}, # mm, V
     '21700': {'diameter': 21, 'nominal_voltage': 3.6}  # mm, V
@@ -259,6 +259,9 @@ def run_optimization(pack, inputs):
     best_sol_ever = None
     best_fitness_ever = 0
 
+
+
+
     for i in range(3):
         print(f"{i+1}/3 pokušaja")
         optimizer = ClonalgOptimizer(pack, max_iterations=500, population_size=50)
@@ -301,9 +304,11 @@ def run_optimization(pack, inputs):
                 best_solution.display(save=True, name=file_name_it)
                 bridges = all_bridges(best_solution.pack, best_solution.cell_to_group)
                 result = solve(best_solution.cell_to_group, bridges, r_cell=1.0, r_per_length=0.01, I=8)
-                print_result(result,bridges)
+                je = junction_estimate(bridges, best_solution.cell_to_group, r_per_length=0.01)
+                print_result(result, bridges, junction=je)  
                 nom = result['nominal_current']
-                draw_bridges(best_solution, bridges, currents=[c / nom for c in result['bridge_currents']], label='struja mosta / nazivna struja ćelije (I/P)', save=True, name=file_name_it+'_mostovi.png', show=False)
+
+                draw_bridges(best_solution, bridges, currents=[c / nom for c in result['bridge_currents']], vmax=3, label='struja mosta / nazivna struja ćelije (I/P)', save=True, name=file_name_it+'_mostovi.png', show=False)
             else:
                 best_solution.display(save=True, show=False,name=file_name_it)
             print(f"-> Slika spremljena na lokaciju: {os.path.join(current_dir, file_name_it)}")
@@ -311,8 +316,21 @@ def run_optimization(pack, inputs):
     input("\nProgram je završio i prikazao rezultate. Za izlaz i zatvaranje svih prozora pritisnite ENTER... ")
     plt.close('all')
 
+
+def run_snake(pack, inputs):
+    best_solution = snake_pattern_row_pairs(pack)
+    best_solution.display(save=False)
+    # bridges = all_bridges(best_solution.pack, best_solution.cell_to_group)
+    # result = solve(best_solution.cell_to_group, bridges, r_cell=1.0, r_per_length=0.01, I=8)
+    # je = junction_estimate(bridges, best_solution.cell_to_group, r_per_length=0.01)
+    # print_result(result, bridges, junction=je)  
+    # nom = result['nominal_current']
+    # draw_bridges(best_solution, bridges, currents=[c / nom for c in result['bridge_currents']], label='struja mosta / nazivna struja ćelije (I/P)', save=True, name='slike/snake_double_bridges.png', show=True, vmax=3)
+    input()
+
 if __name__ == "__main__":
     inputs = get_user_inputs()
     pack = setup_battery_pack(inputs)
     interactive_cell_removal_and_voltage_setup(pack)
     run_optimization(pack, inputs)
+    #run_snake(pack,inputs)
