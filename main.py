@@ -262,9 +262,9 @@ def run_optimization(pack, inputs):
 
 
 
-    for i in range(3):
+    for i in range(1):
         print(f"{i+1}/3 pokušaja")
-        optimizer = ClonalgOptimizer(pack, max_iterations=500, population_size=50)
+        optimizer = ClonalgOptimizer(pack, max_iterations=500, population_size=50, stag_iter=50)
         best_solutions = optimizer.run()  
         print(f"Pronađeno {len(best_solutions)} rješenja.")
         for id, best_solution in enumerate(best_solutions):
@@ -326,7 +326,7 @@ def run_snake(pack, inputs):
     # print_result(result, bridges, junction=je)  
     # nom = result['nominal_current']
     # draw_bridges(best_solution, bridges, currents=[c / nom for c in result['bridge_currents']], label='struja mosta / nazivna struja ćelije (I/P)', save=True, name='slike/snake_double_bridges.png', show=True, vmax=3)
-    input()
+    
 
 if __name__ == "__main__":
     inputs = get_user_inputs()

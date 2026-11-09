@@ -123,7 +123,7 @@ class ClonalgOptimizer:
     Razred koji implementira imunoloski algoritam clonalg za optimizaciju rjesenja pakiranja.
 
     """
-    def __init__(self, pack, max_iterations=50, population_size=50, clones_per_antibody=5, d_new_individuals=12, beta=10):
+    def __init__(self, pack, max_iterations=50, population_size=50, clones_per_antibody=5, d_new_individuals=12, beta=10, stag_iter=100):
         """
         Argumenti:
         pack (object): objekt koji opisuje mrežu
@@ -139,6 +139,7 @@ class ClonalgOptimizer:
         self.clones_per_antibody = clones_per_antibody
         self.d_new_individuals = d_new_individuals
         self.beta = beta
+        self.stag_iter=stag_iter
         
         self.start_population = []
         self.best_ever_solution = None
@@ -206,7 +207,7 @@ class ClonalgOptimizer:
                 self.best_ever_solution = current_best.copy()
             else:
                 stag += 1
-                if stag > 100:
+                if stag > self.stag_iter:
                     print(f"[CLONALG] rani prekid u iteraciji {t+1} zbog stagnacije.")
                     break
                     

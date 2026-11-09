@@ -31,8 +31,8 @@ def _init_plot(W, H, vertices, show):
 def _finalize_plot(ax, W, H, title, save, name, show):
     ax.set_xlim(-5, W + 0.1 * W)
     ax.set_ylim(-5, H + 0.1 * H)
-    ax.set_xlabel('Širina (mm)', fontsize=16, fontweight='bold')
-    ax.set_ylabel('Visina (mm)', fontsize=16, fontweight='bold')
+    ax.set_xlabel('Width (mm)', fontsize=16, fontweight='bold')
+    ax.set_ylabel('Height (mm)', fontsize=16, fontweight='bold')
     ax.set_aspect('equal')
     ax.set_title('{}'.format(title), fontsize=16)
     if save:
@@ -44,12 +44,12 @@ def _finalize_plot(ax, W, H, title, save, name, show):
 
 def plotGrid(cells, W, H, d, cell_d=None, save=False, show=True, name='battery_pack.png', title=None, vertices=None, higlight_ids=None):
     if not cells:
-        print("U paketu nema ćelija!")
+        print("The pack has no cells!")
         return
     if cell_d is None:
         cell_d = d
     _, ax = _init_plot(W, H, vertices, show)
-    title_text = title if title is not None else f'Dimenzije baterije: {W}x{H} cm'
+    title_text = title if title is not None else f'Battery dimensions: {W}x{H} cm'
     added_labels = set()
     for i, cell in enumerate(cells):
         y, x = cell.y, cell.x
@@ -61,7 +61,7 @@ def plotGrid(cells, W, H, d, cell_d=None, save=False, show=True, name='battery_p
                 circle_color = 'black'
                 ax.text(x, y, "BMS", fontsize=12, ha='center', va='center', color='white', fontweight='bold', zorder=7)
             else:
-                c_label = 'Slobodne ćelije' if 'FREE' not in added_labels else None
+                c_label = 'Free cells' if 'FREE' not in added_labels else None
                 added_labels.add('FREE')
                 ax.text(x, y, f"{cell.id}", fontsize=12, ha='center', va='center', color='grey', fontweight='bold', zorder=7)
             
@@ -76,7 +76,7 @@ def plotGrid(cells, W, H, d, cell_d=None, save=False, show=True, name='battery_p
 
 def plotGroups(cells, W, H, d, cell_to_group, no_groups,  cell_d=None, save=False, show=True, name='battery_pack.png', title='', vertices=None, inside_ids=None):
     if not cells:
-        print("Nema ćelija za crtanje!")
+        print("No cells to draw!")
         return
     
     if cell_d is None:
@@ -86,7 +86,7 @@ def plotGroups(cells, W, H, d, cell_to_group, no_groups,  cell_d=None, save=Fals
     added_labels = set()
     for i, cell in enumerate(cells):
         y, x = cell.y, cell.x
-        if getattr(cell, 'group', None) in [-2, 17]:
+        if getattr(cell, 'group', None) == -2:
             current_group = cell.group
         else:
             current_group = cell_to_group[i] if cell_to_group is not None else cell.group
@@ -98,17 +98,17 @@ def plotGroups(cells, W, H, d, cell_to_group, no_groups,  cell_d=None, save=Fals
                 ax.text(x, y, "BMS", fontsize=8, color='white', ha='center', va='center', fontweight='bold', zorder=7)
             elif current_group is None or current_group == -1:
                 circle_color = 'grey'
-                c_label = 'Slobodne ćelije' if 'FREE' not in added_labels else None
+                c_label = 'Free cells' if 'FREE' not in added_labels else None
                 added_labels.add('FREE')
                 ax.text(x, y, f"C{cell.id}", fontsize=12, ha='center', va='center', color='black', fontweight='bold', zorder=7)
             else:
                 norm_group = current_group / max(1, no_groups)
                 circle_color = cmap(norm_group)
                 group_key = f'G_{current_group}'
-                c_label = f'Grupa {current_group}' if group_key not in added_labels else None
+                c_label = f'Group {current_group}' if group_key not in added_labels else None
                 added_labels.add(group_key)
                 ax.text(x, y, f"G{current_group}", fontsize=12, ha='center', va='center', zorder=6)
-                #ax.text(x, y, f"C{cell.id}", fontsize=12, ha='center', va='center', zorder=6, label=f'Grupa {current_group}')
+                #ax.text(x, y, f"C{cell.id}", fontsize=12, ha='center', va='center', zorder=6, label=f'Group {current_group}')
             ax.add_patch(patches.Circle((x, y), cell_d/2, edgecolor='black', facecolor=circle_color, alpha=0.6, label=c_label))
     handles, labels = ax.get_legend_handles_labels()
     if labels:
@@ -119,7 +119,7 @@ def plotGroups(cells, W, H, d, cell_to_group, no_groups,  cell_d=None, save=Fals
     ax.legend(
         handles, 
         labels, 
-        title="Električni spoj:\n- unutar grupe: PARALELA\n- između grupa: SERIJA", 
+        title="Electrical connection:\n- within a group: PARALLEL\n- between groups: SERIES", 
         loc='upper left', 
         bbox_to_anchor=(1.02, 1), 
         borderaxespad=0,
@@ -154,16 +154,16 @@ def plotBridges(cells, W, H, d, cell_to_group, no_groups, save=False, show=True,
                 ax.text(x, y, "BMS", fontsize=8, color='white', ha='center', va='center', fontweight='bold', zorder=7)
             elif current_group is None or current_group == -1:
                 circle_color = 'grey'
-                c_label = 'Slobodne ćelije' if 'FREE' not in added_labels else None
+                c_label = 'Free cells' if 'FREE' not in added_labels else None
                 added_labels.add('FREE')
                 ax.text(x, y, f"C{c_id}", fontsize=12, ha='center', va='center', color='black', fontweight='bold', zorder=7)
             else:
                 norm_group = current_group / max(1, no_groups)
                 circle_color = cmap(norm_group)
                 group_key = f'G_{current_group}'
-                c_label = f'Grupa {current_group}' if group_key not in added_labels else None
+                c_label = f'Group {current_group}' if group_key not in added_labels else None
                 added_labels.add(group_key)
-                ax.text(x, y, f"G{current_group}", fontsize=8, ha='center', va='center', zorder=6, label=f'Grupa {current_group}')
+                ax.text(x, y, f"G{current_group}", fontsize=8, ha='center', va='center', zorder=6, label=f'Group {current_group}')
 
             ax.add_patch(patches.Circle((x, y), d/2, edgecolor='black', facecolor=circle_color, alpha=0.6, label=c_label))
 
@@ -172,7 +172,7 @@ def plotBridges(cells, W, H, d, cell_to_group, no_groups, save=False, show=True,
             if c1_id in cell_coords and c2_id in cell_coords:
                 x1, y1 = cell_coords[c1_id]
                 x2, y2 = cell_coords[c2_id]
-                label_text = 'Spojevi između grupa' if 'BRIDGE' not in added_labels else None
+                label_text = 'Connections between groups' if 'BRIDGE' not in added_labels else None
                 added_labels.add('BRIDGE')
                 ax.plot([x1, x2], [y1, y2], color='red', linewidth=2.5, linestyle='-', zorder=8, label=label_text)
 
@@ -185,7 +185,7 @@ def plotBridges(cells, W, H, d, cell_to_group, no_groups, save=False, show=True,
     ax.legend(
         handles, 
         labels, 
-        title="Električni spoj:\n- unutar grupe: PARALELA\n- između grupa: SERIJA", 
+        title="Electrical connection:\n- within a group: PARALLEL\n- between groups: SERIES", 
         loc='upper left', 
         bbox_to_anchor=(1.02, 1), 
         borderaxespad=0
@@ -201,7 +201,7 @@ def _face(group, side):
     return 'top' if (side == 'p') == (group % 2 == 0) else 'bottom'
  
  
-def draw_bridges(sol, bridges, currents=None, pairs=None, face=None, save=False, name='bridges.png', show=True, label='struja mosta', vmax=None):
+def draw_bridges(sol, bridges, currents=None, pairs=None, face=None, save=False, name='bridges.png', show=True, label='bridge current', vmax=None):
     """
     Crta raspored ćelija (kao sol.display) i preko njega mostove iz all_bridges(...), zasebno za gornju i donju
     stranu paketa (face='top' ili 'bottom'; None = dvije slike). Konvencija: parne grupe imaju p stezaljku gore.
@@ -222,7 +222,7 @@ def draw_bridges(sol, bridges, currents=None, pairs=None, face=None, save=False,
 def _draw_face(sol, bridges, currents, pairs, face, save, name, show, label, vmax=None):
     pack, cg = sol.pack, sol.cell_to_group
     cells = pack.grid.cells
-    title = f'Mostovi, {"gornja" if face == "top" else "donja"} strana: {pack.no_groups}S {pack.no_cells_per_group}P'
+    title = f'Bridges, {"top" if face == "top" else "bottom"} side: {pack.no_groups}S {pack.no_cells_per_group}P'
     plotGroups(cells, pack.grid.W, pack.grid.H, pack.d, cg, pack.no_groups, title=title,
                cell_d=pack.cell_d, vertices=pack.vertices, save=False, show=False)
     ax = plt.gca()
@@ -242,12 +242,11 @@ def _draw_face(sol, bridges, currents, pairs, face, save, name, show, label, vma
  
     if currents is not None:
         plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), ax=ax, label=label, orientation='horizontal', pad=0.12, shrink=0.6)  # ispod slike, da ne prekrije legendu
-        ax.set_title(title + '  (boja = struja mosta)', fontsize=14)
+        ax.set_title(title + '  (colour = bridge current)', fontsize=14)
     else:
-        ax.set_title(title + '  (zeleno = unutar grupe, crno = između grupa)', fontsize=12)
+        ax.set_title(title + '  (green = within a group, black = between groups)', fontsize=12)
     if save:
         plt.savefig(name, bbox_inches='tight')
     if show:
         plt.draw()
         plt.pause(0.1)
- 

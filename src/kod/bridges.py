@@ -90,7 +90,6 @@ def solve(cell_to_group, bridges, r_cell, r_per_length, I):
             'bridge_currents': [float(current[('bridge', i)]) for i in range(len(bridges))]}
 
 
-# ---------- 4. result: print and save ----------
 def print_result(result, bridges, top=5, top_cells=5, idle=0.05, junction=None):
     """Ispisuje ukupni otpor, statistiku po skupinama (ćelije, mostovi između grupa, mostovi unutar grupe),
     `top_cells` najopterećenijih ćelija i `top` najopterećenijih mostova (između kojih ćelija).
