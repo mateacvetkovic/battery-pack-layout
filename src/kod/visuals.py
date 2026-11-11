@@ -22,15 +22,22 @@ def _init_plot(W, H, vertices, show):
     
     if not show:
         plt.ion() # Vratimo natrag na ion stanje
-    ax.add_patch(patches.Rectangle((0, 0), W, H, linewidth=2, edgecolor='black', facecolor='none'))
+    # ax.add_patch(patches.Rectangle((0, 0), W, H, linewidth=2, edgecolor='black', facecolor='none'))
+    # if vertices is not None:
+    #     ax.add_patch(Polygon(vertices, closed=True, fill=None, edgecolor='blue', linewidth=2, linestyle='--'))
+    # return fig, ax
     if vertices is not None:
         ax.add_patch(Polygon(vertices, closed=True, fill=None, edgecolor='blue', linewidth=2, linestyle='--'))
-    return fig, ax
+    else:
+        ax.add_patch(patches.Rectangle((0, 0), W, H, linewidth=2, edgecolor='black', facecolor='none'))
+    return fig,ax
 
 
 def _finalize_plot(ax, W, H, title, save, name, show):
-    ax.set_xlim(-5, W + 0.1 * W)
-    ax.set_ylim(-5, H + 0.1 * H)
+    # ax.set_xlim(-5, W + 0.1 * W)
+    # ax.set_ylim(-5, H + 0.1 * H)
+    ax.autoscale_view()
+    ax.margins(0.03)
     ax.set_xlabel('Width (mm)', fontsize=16, fontweight='bold')
     ax.set_ylabel('Height (mm)', fontsize=16, fontweight='bold')
     ax.set_aspect('equal')
@@ -82,7 +89,8 @@ def plotGroups(cells, W, H, d, cell_to_group, no_groups,  cell_d=None, save=Fals
     if cell_d is None:
         cell_d = d
     _, ax = _init_plot(W, H, vertices, show)
-    cmap = plt.get_cmap('nipy_spectral', no_groups if no_groups > 0 else 1)
+    #cmap = plt.get_cmap('nipy_spectral', no_groups if no_groups > 0 else 1)
+    cmap = plt.get_cmap('nipy_spectral')
     added_labels = set()
     for i, cell in enumerate(cells):
         y, x = cell.y, cell.x
@@ -103,7 +111,8 @@ def plotGroups(cells, W, H, d, cell_to_group, no_groups,  cell_d=None, save=Fals
                 ax.text(x, y, f"C{cell.id}", fontsize=12, ha='center', va='center', color='black', fontweight='bold', zorder=7)
             else:
                 norm_group = current_group / max(1, no_groups)
-                circle_color = cmap(norm_group)
+                # circle_color = cmap(norm_group)
+                circle_color = cmap(0.08 + 0.8 * current_group / max(1, no_groups - 1))
                 group_key = f'G_{current_group}'
                 c_label = f'Group {current_group}' if group_key not in added_labels else None
                 added_labels.add(group_key)

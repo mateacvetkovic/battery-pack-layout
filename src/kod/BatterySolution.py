@@ -241,7 +241,7 @@ class BatterySolution:
             name (str): naziv izlazne datoteke
         """
         if(self.pack.no_groups is not None and self.pack.no_cells_per_group is not None):
-            title = f'Konfiguracija: {self.pack.no_groups}S {self.pack.no_cells_per_group}P'
+            title = f'Configuration: {self.pack.no_groups}S {self.pack.no_cells_per_group}P'
         plotGroups(self.pack.grid.cells, self.pack.grid.W, self.pack.grid.H, self.pack.d, self.cell_to_group, self.pack.no_groups, title=title,cell_d=self.pack.cell_d, vertices=self.pack.vertices, save=save, show=show, name=name)
 
     def displayBridges(self, save=False, name=None):

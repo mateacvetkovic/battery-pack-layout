@@ -76,6 +76,7 @@ PLAN = [
     ('2_hex', HEX_JSON, ['trokut_3', 'trokut_5', 'pravokutnik_3'], 5, (0, 1000)),
     ('3_hex', HEX_JSON, ['pravokutnik_1'], 3, (0,)),
     ('3_orth', ORTH_JSON, ['pravokutni_pravokutnik_A', 'pravokutni_pravokutnik_B_bms', 'pravokutni_pravokutnik_C', 'pravokutni_trokut_B'], 3, (0,)),
+    ('4_hex', 'rjesenja/svipaketi.json', ['trokut_21700'], 2, (0,)),
 ]
 
 

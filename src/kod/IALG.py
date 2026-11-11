@@ -1,6 +1,7 @@
 import random
 from src.kod.heuristics import skewed_sweep,check_simple_solution, snake_pattern_rows, snake_pattern_bottom_up, snake_pattern_columns, max_shared_boundary_distance_based_universal_smart
-
+import time
+import numpy as np
 
 def remove_duplicates(population):
     """
@@ -123,7 +124,7 @@ class ClonalgOptimizer:
     Razred koji implementira imunoloski algoritam clonalg za optimizaciju rjesenja pakiranja.
 
     """
-    def __init__(self, pack, max_iterations=50, population_size=50, clones_per_antibody=5, d_new_individuals=12, beta=10, stag_iter=100):
+    def __init__(self, pack, max_iterations=50, population_size=50, clones_per_antibody=5, d_new_individuals=12, beta=10, stag_iter=100, max_extra_mutations=3, elite_ratio=0.8):
         """
         Argumenti:
         pack (object): objekt koji opisuje mrežu
@@ -147,6 +148,8 @@ class ClonalgOptimizer:
         self.history = []
         self.mutation_stats_history = []
         self.final_population=[]
+        self.max_extra_mutations = max_extra_mutations
+        self.elite_ratio = elite_ratio
 
         self.avg_fitness = []
 
@@ -242,7 +245,8 @@ class ClonalgOptimizer:
                 rank_ratio = parent_rank / (n_pop - 1) if n_pop > 1 else 0.0
 
                 # bolji rade 1 mutaciju, losiji mogu odraditi vise njih u nizu (npr. do 4)
-                num_mutations = 1 + int(3 * rank_ratio)
+                #num_mutations = 1 + int(3 * rank_ratio)
+                num_mutations = 1 + int(self.max_extra_mutations * rank_ratio)
 
                 for _ in range(num_mutations):
                     r = random.random()
@@ -286,7 +290,8 @@ class ClonalgOptimizer:
                 # next_population.extend(unique_mutants[:slots_for_mutants])
                 #chosen_mutants = roulette_wheel_selection(unique_mutants, slots_for_mutants)
 
-                chosen_mutants = hybrid_elitist_random_selection(unique_mutants, slots_for_mutants)
+                #chosen_mutants = hybrid_elitist_random_selection(unique_mutants, slots_for_mutants)
+                chosen_mutants = hybrid_elitist_random_selection(unique_mutants, slots_for_mutants, elite_ratio=self.elite_ratio)
                 next_population.extend(chosen_mutants)
 
             needed_new = self.d_new_individuals
@@ -310,10 +315,19 @@ class ClonalgOptimizer:
                 'iteration': t + 1,
                 'stats': {k: v.copy() for k, v in mutation_stats.items()}
             })
-            
+            ctg = np.array([ind.cell_to_group for ind in population])
+            usable = [c for c in range(ctg.shape[1]) if c not in self.pack.bms_cell_ids]
+            ctg = ctg[:, usable]
+            diff = (ctg[:, None, :] != ctg[None, :, :]).mean(axis=2)
+            diversity = float(diff[np.triu_indices(len(ctg), 1)].mean()) if len(ctg) > 1 else 0.0
+
             self.history.append({
                 'iteration': t + 1,
-                'best_population_fitness': self.best_ever_fitness
+                'best_population_fitness': self.best_ever_fitness,
+                'time': time.time(),
+                'fitness_std': float(np.std(valid_fitnesses)) if valid_fitnesses else 0.0,
+                'diversity': diversity,
+                'fitnesses': list(valid_fitnesses),
             })
             if t % 10 == 0:
                 print(f"iteracija {t+1}/{self.max_iterations} | najbolji fitness u populaciji: {self.best_ever_fitness:.2f}")
