@@ -408,7 +408,7 @@ class BatterySolution:
 
         return best_result
 
-    # NOVO: zadana tezina kazne za daleke celije. 0 = iskljuceno. IALG.run je postavlja na 2 SAMO ako konacno
+    # NOVO: zadana tezina kazne za daleke celije. 0 = iskljuceno. ClonalgOptimizer.run (clonalg.py) je postavlja na 2 SAMO ako konacno
     # rjesenje faze 1 ima celije na 2+ skoka od mosta (vidi ClonalgOptimizer.run).
     W_FAR = 0.0
 
@@ -461,9 +461,9 @@ class BatterySolution:
         # IZMJENA: kazna za odvojene celije. Isplati se samo ako time naraste broj mostova
         # (jedan dodatni most vrijedi barem w_total_bridges = 1, a kazna je 0.5 po komponenti).
         extra_components = sum(self.count_components(g) - 1 for g in valid_groups)
-        # NOVO: kazna za daleke celije (2+ skoka od mosta); aktivna samo kad je W_FAR > 0 (postavlja je IALG.run).
+        # NOVO: kazna za daleke celije (2+ skoka od mosta); aktivna samo kad je W_FAR > 0 (postavlja je ClonalgOptimizer.run).
         far_total = sum(r['far_cost'] for r in bridge_results)
-        self.far_total = far_total  # IALG.run po tome odlucuje treba li ukljuciti kaznu
+        self.far_total = far_total  # ClonalgOptimizer.run po tome odlucuje treba li ukljuciti kaznu
         if w_far is None:
             w_far = self.W_FAR
         self.fitness = (w_min_bridges * min_bridges + w_total_bridges * total_bridges + w_score * mean_bridge_score - w_bridge_balance * bridge_variance - w_split * extra_components
