@@ -617,7 +617,7 @@ def max_shared_boundary_distance_based_universal_smart(pack, void_id=-1, tempera
             last_added = current_group_cells[-1]
 
             # izracunajte score za kandidate
-            for cand in candidates:
+            for cand in sorted(candidates, key=lambda c: c.id):  # set objekata nema stalan redoslijed
                 if strategy == "horizontal":
                     if previous_group_cells:
                         min_dist_to_prev = min(
