@@ -1,3 +1,7 @@
+"""Ispis jednog mjerenja DC unutarnjeg otpora (Tablica 5) iz mape s log_ir.csv, log_ir_timeseries.csv i run.log.
+
+    uv run python experiments/read_measurement.py <mapa_mjerenja>
+"""
 import csv
 import os
 import sys

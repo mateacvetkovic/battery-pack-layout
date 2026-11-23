@@ -1,18 +1,28 @@
-# Rezultati članka
+# Results used in the paper
 
-Imena paketa u kodu i u članku razlikuju se: vidi `data/pack_names.csv`. Definicije paketa su u `data/packages.json`
-(npr. Triangle 1 u članku = `trokut_2` u kodu).
+Pack names in the code differ from the paper: see `data/pack_names.csv` (e.g. Triangle 1 = `trokut_2`).
+Every solution is stored as `.pkl` (full object, for plotting) and `.json` (inputs and cell-to-group assignment,
+readable without this code).
 
-| Mapa | U članku | Proizvela ga je |
+| Folder | Paper | Produced by |
 |---|---|---|
-| `table2_table3_baseline/<paket>.csv` | Tablica 2; retci `CLONALG w_split=1000` su Tablica 3 ("Split = no") | `evaluator.run()` → `evaluation.baseline_table` |
-| `table2_table3_baseline/<paket>_sazetak.csv` | isto, prosjek ± std | isto |
-| `table2_table3_baseline/solutions/<paket>/` | rješenja iz kojih su CSV-ovi; Slika 2 = `trokut_4/` (snake_1_red i CLONALG_w_split=0_run0) | isto |
-| `table2_table3_baseline/trokut_21700_part1*.csv`, `_part2*.csv` | Triangle 8 u Tablici 2 = part1 (3 pokretanja, 11.11. 12:42) + part2 (2 pokretanja, 11.11. 13:44) spojeno ručno, n = 5 | isto, pokrenuto dvaput |
-| `table4_timing/` | Tablica 4 | `dodatni_eksperimenti.timing()` |
-| `fig3_convergence/` | Slika 3 (`trokut_5` = Triangle 4, `pravokutni_trokut_B` = Triangle 6) | `dodatni_eksperimenti.convergence()` → `plot_convergence()` |
-| `fig4_experiment/` | Slika 4 i stupac "Model" u Tablici 5 | `main.py` (CLONALG), `run_snake` (snake); model: kraj `dodatni_eksperimenti.py` |
-| `extra_resistance_sweep/otpor.csv` | nije u članku; podržava tvrdnju da poredak metoda ne ovisi o otporima | `dodatni_eksperimenti.resistance_sweep()` |
-| `extra_population/` | nije u članku | `dodatni_eksperimenti.population_snapshot()` |
+| `table2_table3_baseline/<pack>.csv` | Table 2; rows `CLONALG w_split=1000` are Table 3 ("Split = no") | `experiments/run_baseline.py` |
+| `table2_table3_baseline/solutions/<pack>/` | layout of every row; Fig. 2 = `trokut_4/` (`snake_1_row`, `clonalg_split_allowed_run0`) | same |
+| `table4_timing/` | Table 4 | `experiments/run_timing.py` |
+| `fig3_convergence/` | Fig. 3 (`trokut_5` = Triangle 4, `pravokutni_trokut_B` = Triangle 6) | `experiments/run_convergence.py` |
+| `fig4_experiment/` | Fig. 4 and the "Model" column of Table 5 | layouts are inputs (the assembled packs); `experiments/run_assembled_packs.py` |
+| `extra_resistance_sweep/` | not in the paper; supports the claim that the ranking does not depend on the resistances | `experiments/run_resistance_sweep.py` |
+| `extra_population/` | not in the paper | removed function `population_snapshot` (see git history) |
 
-Nedostaje: izmjereni podaci za Tablicu 5 (mape s `log_ir.csv`) i fotografije za Sliku 4b i 4d.
+## Known issues of the current files (to be fixed by re-running)
+
+- The CSVs in `table2_table3_baseline/`, `table4_timing/` and `fig3_convergence/` were produced before seeding was made
+  deterministic (DTAA iterated over a set of objects, whose order depends on memory addresses). Snake rows are deterministic
+  and reproduce exactly; initial heuristics and CLONALG rows cannot be reproduced exactly. Their seeds are unknown.
+- Triangle 8 (`trokut_21700_part1*.csv`, `_part2*.csv`) is two separate runs merged into n = 5; runs 0 and 1 appear in both.
+- `table2_table3_baseline/*_sazetak.csv` are old summaries; the paper tables are now computed by `tables/*.py`.
+- `extra_resistance_sweep/resistance_sweep.csv` was computed before Triangle 8 was re-run; its Triangle 8 rows refer to older layouts.
+- Table 2 was computed with T = 200 iterations; the paper states T = 500 (`config.CLONALG_PAPER` now uses 500).
+- The 7S3P snake pack (`fig4_experiment/snake_7S3P`) is the plain row-wise snake (`heuristics.snake_pattern_rows`), not the
+  oriented snake of Table 2. The CLONALG 7S3P layout was produced by `main.py` without a recorded seed.
+- Measured data for Table 5 (folders with `log_ir.csv`) and the photographs for Fig. 4b, 4d are not in the repository yet.

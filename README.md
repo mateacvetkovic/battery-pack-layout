@@ -1,38 +1,60 @@
-# Program za određivanje optimalnog spoja baterijskih članaka
+# Battery pack cell layout optimization
 
-Programsko rješenje razvijeno u sklopu diplomskog rada za automatsko generiranje, konfiguraciju i optimizaciju rasporeda ćelija u baterijskim paketima nepravilnih geometrijskih oblika (pravokutnici i trokuti) s primjenom heurističkih metoda i umjetnog imunološkog algoritma (CLONALG).
+Code for the paper *Automated layout of cylindrical cells in battery packs of light electric vehicles*:
+fits a hexagonal or orthogonal grid into a rectangular or triangular container, assigns cells to S series groups
+of P parallel cells with construction heuristics (snake, skewed sweep, DTAA), refines the layout with a clonal
+selection algorithm (CLONALG), and evaluates it with an electrical model of the pack.
 
+## Installation
 
-## Preduvjeti
+Requires [uv](https://docs.astral.sh/uv/) and Python ≥ 3.13.
 
-Prije pokretanja programa potrebno je imati instaliran **Python** (preporučena vrezija 3.12).
-Kako bi se omogućio prikaz interaktivnih prozora na Linuxu, potrebno je prije kreiranja virtualnog okruženja instalirati sistemski paket `python3-tk`:
-    sudo apt update
-    sudo apt install python3-tk
+    uv sync
 
-## Upute za instalaciju i pokretanje
+All commands below are run from the repository root with `uv run`, which uses the locked environment (`uv.lock`).
 
-### 1. Preuzimanje i pozicioniranje u mapu projekta
-Otvorite terminal i pređite u mapu u kojoj se nalazi izvorni kod programa i datoteka `requirements.txt`.
+## Reproducing the paper
 
-### 2. Kreiranje i aktivacija virtualnog okruženja (venv)
-Preporučuje se izrada izoliranog virtualnog okruženja:
-Linux:
-    python3 -m venv venv
-    source venv/bin/activate
-Windows:
-bash
-    python -m venv venv
-    venv\Scripts\activate
-### 3. Instalacija potrebnih biblioteka
-Nakon aktivacije okruženja, instalirajte sve potrebne zavisnosti:
-    pip install -r requirements.txt 
-### 4. Pokretanje programa
-Glavna ulazna točka programa pokreće se naredbom:
-    python3 main.py
+Each experiment writes raw rows (one per run) to `results/`; each table or figure script only reads them.
+Every stochastic run uses seed `100 + k` for run `k` (`src/kod/config.py`), and the seed is stored in every row.
+`results/<experiment>/meta.json` records the git commit, library versions and settings of the run.
 
+| Paper | Experiment (slow) | Table / figure (seconds) |
+|---|---|---|
+| Table 2, Table 3 | `experiments/run_baseline.py` | `tables/table2_baseline.py`, `tables/table3_split.py` |
+| Table 4 | `experiments/run_timing.py` | `tables/table4_timing.py` |
+| Fig. 2 | (uses Table 2 solutions) | `figures/fig2_layouts.py` |
+| Fig. 3 | `experiments/run_convergence.py` | `figures/fig3_convergence.py` |
+| Fig. 4, Table 5 (model column) | `experiments/run_assembled_packs.py` | `figures/fig4_layouts.py` |
 
-## Rad s programom
-Nakon pokretanja skripte, u terminalu će se pojaviti izbornik kroz koji se unose tip ćelije, format ćelije (18650 ili 21700), udaljenost među ćelijama (mm), tip mreže (saćasta/pravokutna), oblik paketa (pravokutnik/trokut), duljine stranica paketa (cm).
-Program zatim iscrtava paket i omogućuje ručno uklanjanje dijela ćelija za BMS unosom njihovih ID-jeva sa slike u terminal. Za zadani paket program ispisuje moguće konfiguracije, nakon čega korisnik unosi željeni napon paketa. 
-Po završetku unosa, program pokreće optimizacijski algoritam, ispisuje ocjenu kvalitete (fitness) i parametre spojeva u terminal te automatski sprema grafički prikaz konačnog dizajna u obliku .png slika u radnu mapu projekta. S obzirom da je moguće da postoji više najboljih rješenja (različita konfiguracija, ista dobrota), sve se slike konfiguracija pohranjuju u mapu, a samo jedna od njih otvara u prozoru za prikaz. Program završava s radom i zatvara sve prozore pritiskom tipke ENTER.
+Example:
+
+    uv run python experiments/run_baseline.py --quick trokut_4   # check that everything runs (seconds)
+    uv run python experiments/run_baseline.py                    # full Table 2 and 3 (hours)
+    uv run python tables/table2_baseline.py                      # -> paper_tables/table2_baseline.csv
+
+Table and figure scripts read every `*.csv` in the experiment folder, so move old results away before re-running an experiment.
+Pack definitions are in `data/packages.json`; code names and paper names (e.g. `trokut_2` = Triangle 1) are in `data/pack_names.csv`.
+Timings in Table 4 depend on the machine; iteration counts and solutions do not.
+
+## Layout
+
+    src/kod/        library
+      config.py         cell data, strip and cell resistances, CLONALG settings, seeds
+      grids.py, containers.py, optimizers.py   grid models and fitting into the container (Sec. 2.2-2.3)
+      BatteryPack.py    pack, BMS reservation, S x P configuration (Sec. 2.4); setup_battery_pack, load_packs
+      BatterySolution.py  solution, validity conditions and fitness (Sec. 2.5-2.6)
+      heuristics.py     snake, skewed sweep, DTAA (Sec. 2.7)
+      clonalg.py, mutations.py  CLONALG (Sec. 2.8)
+      circuit.py        electrical model (Sec. 2.9)
+      metrics.py        evaluation metrics (Sec. 3.2)
+      storage.py        saving solutions (.pkl and .json) and run metadata
+      visuals.py        plotting
+    experiments/    one script per experiment
+    tables/         one script per table
+    figures/        one script per figure
+    examples/       small standalone examples
+    data/           pack definitions
+    results/        raw results used in the paper (see results/README.md)
+    paper_figures/  figures as used in the paper
+    main.py         interactive program (cell removal for BMS, voltage selection, optimization)

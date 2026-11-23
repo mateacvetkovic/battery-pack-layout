@@ -1,41 +1,25 @@
+"""Interaktivni program (diplomski rad): unos paketa, uklanjanje ćelija za BMS, odabir napona i CLONALG.
+Rezultati (slike, .pkl i .json rješenja) spremaju se u interactive_runs/. Eksperimenti iz članka su u experiments/.
+
+    uv run python main.py
+"""
 import os
+import random
 import sys
-import numpy as np
 from datetime import datetime
 
 import matplotlib.pyplot as plt
-import pickle
-from src.kod.grids import HexGrid, RectangularGrid
-from src.kod.containers import TriangleContainer
-from src.kod.BatteryPack import BatteryPack
-from src.kod.BatterySolution import BatterySolution
-from src.kod.optimizers import TriangleContainerOptimizer
-from src.kod.IALG import ClonalgOptimizer
-from src.kod.bridges import all_bridges, save_solution, load_solution, solve, print_result, junction_estimate
-from src.kod.visuals import draw_bridges
-from src.kod.heuristics import snake_pattern_row_pairs, snake_pattern_rows
-#from src.kod.evaluation import R_PER_LENGTH
-R_PER_LENGTH = 6.99e-5 / (0.15 * 7)   # ≈ 6.66e-5 ohm/mm
 
-CELL_SPECS = {
-    '18650': {'diameter': 18, 'nominal_voltage': 3.6, 'R_cell': 0.07}, # mm, V, Ohm
-    '21700': {'diameter': 21, 'nominal_voltage': 3.6, 'R_cell': 0.03}  # mm, V
-}
+from kod.BatteryPack import setup_battery_pack
+from kod.circuit import all_bridges, solve, print_result, junction_estimate
+from kod.clonalg import ClonalgOptimizer
+from kod.config import ALLOWED_CELL_TYPES, ALLOWED_NET_TYPES, CELL_SPECS, strip_r_per_length
+from kod.storage import save_solution
+from kod.visuals import draw_bridges
 
-ALLOWED_NET_TYPES = ['saćasti', 'pravokutni']
-ALLOWED_CELL_TYPES = ['18650', '21700']
+R_PER_LENGTH = strip_r_per_length(0.15)   # traka 0.15 x 7 mm, kao u sastavljenim paketima
+OUT_DIR = 'interactive_runs'
 
-def save_battery_solution(solution, inputs, path):
-    """Sprema BatterySolution (paket je unutar njega) i unose korisnika u jednu .pkl datoteku, uz sliku istog imena."""
-    with open(path, 'wb') as f:
-        pickle.dump({'solution': solution, 'inputs': inputs}, f)
-
-
-def load_battery_solution(path):
-    """Vraća (solution, inputs) iz datoteke koju je napravila save_battery_solution."""
-    with open(path, 'rb') as f:
-        data = pickle.load(f)
-    return data['solution'], data['inputs']
 
 def get_user_inputs():
     print("=" * 60)
@@ -130,60 +114,6 @@ def get_user_inputs():
         'dimensions_cm': dimensions_cm
     }
 
-def setup_battery_pack(inputs):
-    c_spec = CELL_SPECS[inputs['cell_type']]
-    d = inputs['cell_distance']
-
-    dims_mm = [dim * 10.0 for dim in inputs['dimensions_cm']]
-
-    if inputs['shape_type'] == 'rectangle':
-        v = None
-        W, H = dims_mm[0], dims_mm[1]
-        if inputs['net_type'] == 'saćasti':
-            grid_h = HexGrid(d, W, H)
-            grid_h.fit()
-            count_h = grid_h.total_cells
-
-            grid_v = HexGrid(d, H, W)
-            grid_v.fit()
-            count_v = grid_v.total_cells
-
-            if count_h >= count_v:
-                grid = grid_h
-            else:
-                grid = grid_v
-        else:
-            grid = RectangularGrid(cell_distance=d, width=W, height=H)
-            grid.fit()
-
-    else: 
-        container = TriangleContainer(inputs['dimensions_cm'])        
-        max_dim = container.calculate_triangle_grid_size(d) 
-        W, H = max_dim, max_dim
-
-        if inputs['net_type'] == 'saćasti':
-            grid = HexGrid(cell_distance=d, width=W, height=H)
-        else:
-            grid = RectangularGrid(cell_distance=d, width=W, height=H)
-        grid.fit()
-        to = TriangleContainerOptimizer(container, grid)
-        cells_inside_ids, v, grid = to.solve(15)
-
-        grid.create_subgrid(cells_inside_ids)
-
-    try:
-        pack = BatteryPack(
-            grid=grid, 
-            cell_type=inputs['cell_type'], 
-            vertices=v,
-            type=inputs['shape_type']
-        )
-        return pack
-
-    except ValueError as e:
-        print(e)
-        sys.exit()
-
 def interactive_cell_removal_and_voltage_setup(pack):
     print("\n" + "="*60)
     print("CRTANJE INICIJALNOG GRID-A...")
@@ -253,11 +183,15 @@ def run_optimization(pack, inputs):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     if shape_type == 'rectangle':
         W, H = inputs['dimensions_cm']
-        file_name = f"slike/baterija_{grid_type}_{shape_type}_W{W}_H{H}_{timestamp}"
+        file_name = f"{OUT_DIR}/baterija_{grid_type}_{shape_type}_W{W}_H{H}_{timestamp}"
     else:
         a,b,c = inputs['dimensions_cm']
-        file_name = f"slike/baterija_{grid_type}_{shape_type}_A{a}_B{b}_C{c}_{timestamp}"
+        file_name = f"{OUT_DIR}/baterija_{grid_type}_{shape_type}_A{a}_B{b}_C{c}_{timestamp}"
     file_name = file_name.replace(".", ",")
+    os.makedirs(OUT_DIR, exist_ok=True)
+    seed = random.randrange(2**32)   # zapisuje se uz rješenje, da se pokretanje može ponoviti
+    random.seed(seed)
+    print(f"Seed: {seed}")
 
     best_sol_ever = None
     best_fitness_ever = 0
@@ -279,8 +213,7 @@ def run_optimization(pack, inputs):
                 best_sol_ever = best_solution
 
             file_name_it = f"{file_name}_it{i+1}_id{id}.png"
-            file_name_it_sol= file_name_it.replace('.png', '.pkl').replace('slike','rjesenja/experiment')
-            save_battery_solution(best_solution, inputs,  file_name_it_sol)
+            save_solution(file_name_it.replace('.png', ''), best_solution, inputs, seed=seed)
             # print(f"\n-> Ukupna ocjena kvalitete paketa (Fitness): {fitness_val:.2f}")  
             # print(f"-> Minimalan broj direktnih spojeva između ikojih susjednih grupa: {eval_info['min_bridges']}")  
             # print(f"-> Ukupan broj direktnih serijskih spojeva u paketu/idealan broj spojeva: {eval_info['total_bridges']}/{pack.no_cells_per_group*(pack.no_groups-1)}")  
@@ -320,22 +253,12 @@ def run_optimization(pack, inputs):
     plt.close('all')
 
 
-def run_snake(pack, inputs):
-    best_solution = snake_pattern_row_pairs(pack)
-    best_solution.display(save=False)
-    bridges = all_bridges(best_solution.pack, best_solution.cell_to_group)
-    result = solve(best_solution.cell_to_group, bridges, r_cell=CELL_SPECS[pack.cell_type]['R_cell'], r_per_length=R_PER_LENGTH, I=pack.no_cells_per_group)
-    je = junction_estimate(bridges, best_solution.cell_to_group, r_per_length=0.01)
-    print_result(result, bridges, junction=je)  
-    nom = result['nominal_current']
-    draw_bridges(best_solution, bridges, currents=[c / nom for c in result['bridge_currents']], label='struja mosta / nazivna struja ćelije (I/P)', save=True, name='slike/snake_double_bridges.png', show=True, vmax=3)
-    save_battery_solution(best_solution, inputs,  'rjesenja/experiment/snake_2.pkl')
-
-
 if __name__ == "__main__":
     inputs = get_user_inputs()
-    pack = setup_battery_pack(inputs)
+    try:
+        pack = setup_battery_pack(inputs)
+    except ValueError as e:
+        print(e)
+        sys.exit()
     interactive_cell_removal_and_voltage_setup(pack)
     run_optimization(pack, inputs)
-    #run_snake(pack,inputs)
-    #input()
