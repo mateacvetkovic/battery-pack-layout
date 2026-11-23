@@ -139,71 +139,6 @@ def plotGroups(cells, W, H, d, cell_to_group, no_groups,  cell_d=None, save=Fals
     _finalize_plot(ax, W, H, title, save, name, show)
 
 
-def plotBridges(cells, W, H, d, cell_to_group, no_groups, save=False, show=True, name='battery_pack.png', title='', vertices=None, inside_ids=None, bridges=None):
-    if not cells:
-        print("No cells to plot!")
-        return
-
-    _, ax = _init_plot(W, H, vertices)
-    cmap = plt.get_cmap('nipy_spectral', no_groups if no_groups > 0 else 1)
-    cell_coords = {}
-    added_labels = set()
-
-    for i, cell in enumerate(cells):
-        y, x = cell.y, cell.x
-        c_id = getattr(cell, 'id', i)
-        cell_coords[c_id] = (x, y)
-        current_group = cell_to_group[i] if cell_to_group is not None else getattr(cell, 'group', None)
-
-        if 0 <= x <= W and 0 <= y <= H:
-            if getattr(cell, 'group', None) == -2:
-                circle_color = 'black'
-                c_label = 'BMS' if 'BMS' not in added_labels else None
-                added_labels.add('BMS')
-                ax.text(x, y, "BMS", fontsize=8, color='white', ha='center', va='center', fontweight='bold', zorder=7)
-            elif current_group is None or current_group == -1:
-                circle_color = 'grey'
-                c_label = 'Free cells' if 'FREE' not in added_labels else None
-                added_labels.add('FREE')
-                ax.text(x, y, f"C{c_id}", fontsize=12, ha='center', va='center', color='black', fontweight='bold', zorder=7)
-            else:
-                norm_group = current_group / max(1, no_groups)
-                circle_color = cmap(norm_group)
-                group_key = f'G_{current_group}'
-                c_label = f'Group {current_group}' if group_key not in added_labels else None
-                added_labels.add(group_key)
-                ax.text(x, y, f"G{current_group}", fontsize=8, ha='center', va='center', zorder=6, label=f'Group {current_group}')
-
-            ax.add_patch(patches.Circle((x, y), d/2, edgecolor='black', facecolor=circle_color, alpha=0.6, label=c_label))
-
-    if bridges is not None:
-        for c1_id, c2_id in bridges:
-            if c1_id in cell_coords and c2_id in cell_coords:
-                x1, y1 = cell_coords[c1_id]
-                x2, y2 = cell_coords[c2_id]
-                label_text = 'Connections between groups' if 'BRIDGE' not in added_labels else None
-                added_labels.add('BRIDGE')
-                ax.plot([x1, x2], [y1, y2], color='red', linewidth=2.5, linestyle='-', zorder=8, label=label_text)
-
-    handles, labels = ax.get_legend_handles_labels()
-    if labels:
-        sorted_pairs = sorted(zip(handles, labels), key=lambda pair: pair[1])
-        handles, labels = zip(*sorted_pairs)
-        handles, labels = list(handles), list(labels)
-
-    ax.legend(
-        handles, 
-        labels, 
-        title="Electrical connection:\n- within a group: PARALLEL\n- between groups: SERIES", 
-        loc='upper left', 
-        bbox_to_anchor=(1.02, 1), 
-        borderaxespad=0
-    )
-
-    _finalize_plot(ax, W, H, title, save, name, show)
-
-
-
 def _face(group, side):
     """Strana paketa na kojoj je stezaljka. Parne grupe: p gore, n dolje; neparne su okrenute, pa obrnuto.
     Zato su mostovi između grupa naizmjence gore i dolje, a most ima obje stezaljke na istoj strani."""
@@ -259,3 +194,76 @@ def _draw_face(sol, bridges, currents, pairs, face, save, name, show, label, vma
     if show:
         plt.draw()
         plt.pause(0.1)
+
+# ---------- slike za članak (Slika 2 i 4) ----------
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import LogNorm
+from matplotlib.lines import Line2D
+from matplotlib.patches import Circle, Patch
+from matplotlib.ticker import FixedFormatter, FixedLocator
+
+SEG_NORM = LogNorm(vmin=1, vmax=6)   # zajednička skala struje segmenta za sve panele Slike 2
+SEG_CMAP = plt.get_cmap('plasma_r')
+SEG_TICKS = [1, 1.5, 2, 3, 4, 6]
+
+
+def solve_all_bridges(sol, r_cell, r_per_length):
+    """Električni model sa svim mogućim mostovima (§2.9). Vraća (mostovi, rezultat solvera)."""
+    from kod.circuit import all_bridges, solve
+    bridges = all_bridges(sol.pack, sol.cell_to_group)
+    return bridges, solve(sol.cell_to_group, bridges, r_cell, r_per_length, sol.pack.no_cells_per_group)
+
+
+def draw_hot_cells(ax, sol, res, cell_threshold=1.03):
+    """Crveni prsten oko ćelija čija struja prelazi nazivnu za više od (cell_threshold - 1)."""
+    cells, nom = sol.pack.grid.cells, res['nominal_current']
+    for c, I in res['cell_currents'].items():
+        if I / nom >= cell_threshold:
+            ax.add_patch(Circle((cells[c].x, cells[c].y), sol.pack.cell_d / 2, fill=False, edgecolor='red', lw=2.5, zorder=11))
+
+
+def draw_layout_currents(ax, sol, r_cell, r_per_length, n_segments=4, cell_threshold=1.03):
+    """Najopterećenije ćelije + n_segments segmenata s najvećom strujom, obojanih po struji. Vraća te struje (relativne)."""
+    bridges, res = solve_all_bridges(sol, r_cell, r_per_length)
+    cells, nom = sol.pack.grid.cells, res['nominal_current']
+    seg = sorted(((res['bridge_currents'][i] / nom, b) for i, b in enumerate(bridges) if i not in res['shorted_bridges']),
+                 key=lambda t: t[0], reverse=True)[:n_segments]
+    for v, b in reversed(seg):  # najjači se crta zadnji, preko ostalih
+        c1, c2 = cells[b['a'][0]], cells[b['b'][0]]
+        ax.plot([c1.x, c2.x], [c1.y, c2.y], color='black', lw=6, solid_capstyle='round', zorder=12)
+        ax.plot([c1.x, c2.x], [c1.y, c2.y], color=SEG_CMAP(SEG_NORM(max(v, 1))), lw=4, solid_capstyle='round', zorder=13)
+    draw_hot_cells(ax, sol, res, cell_threshold)
+    return [v for v, _ in seg]
+
+
+def save_colorbar(path):
+    """Zajednička (logaritamska) skala struje segmenta."""
+    fig = plt.figure(figsize=(3.5, 0.6))
+    cax = fig.add_axes([0.05, 0.55, 0.9, 0.2])
+    fig.colorbar(ScalarMappable(SEG_NORM, SEG_CMAP), cax=cax, orientation='horizontal')
+    cax.xaxis.set_major_locator(FixedLocator(SEG_TICKS))
+    cax.xaxis.set_major_formatter(FixedFormatter([str(t) for t in SEG_TICKS]))
+    cax.xaxis.set_minor_locator(FixedLocator([]))
+    cax.set_xlabel('Segment current / nominal cell current', fontsize=7)
+    cax.tick_params(labelsize=7)
+    fig.savefig(path, bbox_inches='tight')
+    plt.close(fig)
+
+
+def save_legend(no_groups, path, ncol=8, bms=False, n_segments=None):
+    """Jedna legenda za sve panele; boje grupa iste kao u plotGroups.
+    bms: dodaje BMS; n_segments: dodaje oznake za preopterećene ćelije i n_segments najjačih segmenata (Slika 2)."""
+    cmap = plt.get_cmap('nipy_spectral')
+    handles = [Patch(facecolor=cmap(0.08 + 0.8 * g / max(1, no_groups - 1)), edgecolor='black', alpha=0.6, label=f'G{g}')
+               for g in range(no_groups)]
+    if bms:
+        handles.append(Patch(facecolor='black', edgecolor='black', alpha=0.6, label='BMS'))
+    handles.append(Patch(facecolor='grey', edgecolor='black', alpha=0.6, label='Unused'))
+    if n_segments:
+        handles += [Line2D([], [], marker='o', ls='', markerfacecolor='none', markeredgecolor='red',
+                           markeredgewidth=2, markersize=9, label='Cell current > 1.03'),
+                    Line2D([], [], color=SEG_CMAP(0.5), lw=4, label=f'{n_segments} highest segment currents')]
+    fig = plt.figure(figsize=(7, 0.6))
+    fig.legend(handles=handles, loc='center', ncol=ncol, fontsize=7, frameon=False)
+    fig.savefig(path, bbox_inches='tight')
+    plt.close(fig)

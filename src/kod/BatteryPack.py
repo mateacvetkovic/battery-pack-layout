@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.path import Path
 from matplotlib.patches import Polygon
-from src.kod.grids import Cell, Grid
-from src.kod.visuals import plotGrid
-from src.kod.BatterySolution import BatterySolution
+from kod.grids import Cell, Grid
+from kod.visuals import plotGrid
+from kod.BatterySolution import BatterySolution
 
 class BatteryPack:
     """
@@ -131,3 +131,67 @@ class BatteryPack:
             title = f'Ukupan broj iskoristivih ćelija: {self.usable_cells}'
 
         plotGrid(self.grid.cells, self.grid.W, self.grid.H, self.d, self.cell_d, title=title, vertices=self.vertices, higlight_ids=self.bms_cell_ids)
+
+def setup_battery_pack(inputs):
+    """Gradi BatteryPack iz ulaza (cell_type, cell_distance, net_type, shape_type, dimensions_cm):
+    smješta rešetku u pravokutnik (obje orijentacije za saćastu, §2.3.1) ili trokut (§2.3.2)."""
+    from kod.grids import HexGrid, RectangularGrid
+    from kod.containers import TriangleContainer
+    from kod.optimizers import TriangleContainerOptimizer
+
+    d = inputs['cell_distance']
+    dims_mm = [dim * 10.0 for dim in inputs['dimensions_cm']]
+
+    if inputs['shape_type'] == 'rectangle':
+        v = None
+        W, H = dims_mm[0], dims_mm[1]
+        if inputs['net_type'] == 'saćasti':
+            grid_h = HexGrid(d, W, H)
+            grid_h.fit()
+            grid_v = HexGrid(d, H, W)
+            grid_v.fit()
+            grid = grid_h if grid_h.total_cells >= grid_v.total_cells else grid_v
+        else:
+            grid = RectangularGrid(cell_distance=d, width=W, height=H)
+            grid.fit()
+    else:
+        container = TriangleContainer(inputs['dimensions_cm'])
+        max_dim = container.calculate_triangle_grid_size(d)
+        W, H = max_dim, max_dim
+        if inputs['net_type'] == 'saćasti':
+            grid = HexGrid(cell_distance=d, width=W, height=H)
+        else:
+            grid = RectangularGrid(cell_distance=d, width=W, height=H)
+        grid.fit()
+        to = TriangleContainerOptimizer(container, grid)
+        cells_inside_ids, v, grid = to.solve(15)
+        grid.create_subgrid(cells_inside_ids)
+
+    return BatteryPack(grid=grid, cell_type=inputs['cell_type'], vertices=v, type=inputs['shape_type'])
+
+
+def load_packs(path, names=None):
+    """Učitava pakete iz JSON-a (data/packages.json): lista objekata s ključevima name, cell_type, cell_distance,
+    net_type, shape_type, dimensions_cm, voltage i neobavezno bms_ids, r_cell, r_per_length.
+    names: ako je zadano, gradi samo te pakete (gradnja trokuta traje). Vraća {ime: {'name', 'pack', 'inputs', 'r_cell', 'r_per_length'}}."""
+    import json
+    from kod.config import CELL_SPECS, PAPER
+    with open(path, encoding='utf-8') as f:
+        examples = json.load(f)
+    packs = {}
+    for i, ex in enumerate(examples):
+        name = ex.get('name', f'paket{i + 1}')
+        if names is not None and name not in names:
+            continue
+        missing = [k for k in ('cell_type', 'cell_distance', 'net_type', 'shape_type', 'dimensions_cm', 'voltage') if k not in ex]
+        if missing:
+            raise ValueError(f'{name}: nedostaju ključevi {missing}')
+        pack = setup_battery_pack({k: ex[k] for k in ('cell_type', 'cell_distance', 'net_type', 'shape_type', 'dimensions_cm')})
+        if ex.get('bms_ids'):  # isti redoslijed kao u main.py: prvo BMS, pa napon
+            pack.set_bms_cells(ex['bms_ids'])
+        pack.set_voltage(ex['voltage'], CELL_SPECS[ex['cell_type']]['nominal_voltage'])
+        packs[name] = {'name': name, 'pack': pack, 'inputs': dict(ex),
+                       'r_cell': ex.get('r_cell', PAPER['r_cell']), 'r_per_length': ex.get('r_per_length', PAPER['r_per_length'])}
+    if names is not None and set(names) - set(packs):
+        raise KeyError(f'nema u {path}: {sorted(set(names) - set(packs))}')
+    return packs
