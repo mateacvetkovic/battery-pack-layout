@@ -189,7 +189,7 @@ def run_optimization(pack, inputs):
         file_name = f"{OUT_DIR}/baterija_{grid_type}_{shape_type}_A{a}_B{b}_C{c}_{timestamp}"
     file_name = file_name.replace(".", ",")
     os.makedirs(OUT_DIR, exist_ok=True)
-    seed = random.randrange(2**32)   # zapisuje se uz rješenje, da se pokretanje može ponoviti
+    seed = int(sys.argv[1]) if len(sys.argv) > 1 else random.randrange(2**32)
     random.seed(seed)
     print(f"Seed: {seed}")
 

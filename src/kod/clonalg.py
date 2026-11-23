@@ -215,8 +215,8 @@ class ClonalgOptimizer:
                     print(f"[CLONALG] rani prekid u iteraciji {t+1} zbog stagnacije.")
                     break
                     
-            if current_best.eval_info['total_bridges'] == (self.pack.no_groups - 1) * self.pack.no_cells_per_group:
-                return [current_best]
+            # if current_best.eval_info['total_bridges'] == (self.pack.no_groups - 1) * self.pack.no_cells_per_group:
+            #     return [current_best]
 
             clonal_pool = []
             # odabir broja klonova u ovisnosti o kvaliteti rjesenja - bolja rjesenja, vise klonova
