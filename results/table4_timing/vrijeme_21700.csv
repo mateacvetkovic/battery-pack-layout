@@ -1,0 +1,4 @@
+pack,run,S,P,iterations_to_best,iterations_total,time_to_best_s,time_total_s,phase2
+trokut_21700,0,11,10,68,118,311.5,526.7,True
+trokut_21700,1,11,10,24,125,85.2,439.0,True
+trokut_21700,2,11,10,71,121,312.4,522.7,True

@@ -14,9 +14,12 @@ from src.kod.IALG import ClonalgOptimizer
 from src.kod.bridges import all_bridges, save_solution, load_solution, solve, print_result, junction_estimate
 from src.kod.visuals import draw_bridges
 from src.kod.heuristics import snake_pattern_row_pairs, snake_pattern_rows
+#from src.kod.evaluation import R_PER_LENGTH
+R_PER_LENGTH = 6.99e-5 / (0.15 * 7)   # ≈ 6.66e-5 ohm/mm
+
 CELL_SPECS = {
-    '18650': {'diameter': 18, 'nominal_voltage': 3.6}, # mm, V
-    '21700': {'diameter': 21, 'nominal_voltage': 3.6}  # mm, V
+    '18650': {'diameter': 18, 'nominal_voltage': 3.6, 'R_cell': 0.07}, # mm, V, Ohm
+    '21700': {'diameter': 21, 'nominal_voltage': 3.6, 'R_cell': 0.03}  # mm, V
 }
 
 ALLOWED_NET_TYPES = ['saćasti', 'pravokutni']
@@ -264,7 +267,7 @@ def run_optimization(pack, inputs):
 
     for i in range(1):
         print(f"{i+1}/3 pokušaja")
-        optimizer = ClonalgOptimizer(pack, max_iterations=500, population_size=50, stag_iter=50)
+        optimizer = ClonalgOptimizer(pack, max_iterations=500, population_size=50, stag_iter=100)
         best_solutions = optimizer.run()  
         print(f"Pronađeno {len(best_solutions)} rješenja.")
         for id, best_solution in enumerate(best_solutions):
@@ -276,7 +279,7 @@ def run_optimization(pack, inputs):
                 best_sol_ever = best_solution
 
             file_name_it = f"{file_name}_it{i+1}_id{id}.png"
-            file_name_it_sol= file_name_it.replace('.png', '.pkl').replace('slike','rjesenja')
+            file_name_it_sol= file_name_it.replace('.png', '.pkl').replace('slike','rjesenja/experiment')
             save_battery_solution(best_solution, inputs,  file_name_it_sol)
             # print(f"\n-> Ukupna ocjena kvalitete paketa (Fitness): {fitness_val:.2f}")  
             # print(f"-> Minimalan broj direktnih spojeva između ikojih susjednih grupa: {eval_info['min_bridges']}")  
@@ -303,8 +306,8 @@ def run_optimization(pack, inputs):
             if (id==0):
                 best_solution.display(save=True, name=file_name_it)
                 bridges = all_bridges(best_solution.pack, best_solution.cell_to_group)
-                result = solve(best_solution.cell_to_group, bridges, r_cell=1.0, r_per_length=0.01, I=8)
-                je = junction_estimate(bridges, best_solution.cell_to_group, r_per_length=0.01)
+                result = solve(best_solution.cell_to_group, bridges, r_cell=CELL_SPECS[pack.cell_type]['R_cell'], r_per_length=R_PER_LENGTH, I=pack.no_cells_per_group)
+                je = junction_estimate(bridges, best_solution.cell_to_group, r_per_length=R_PER_LENGTH)
                 print_result(result, bridges, junction=je)  
                 nom = result['nominal_current']
 
@@ -320,13 +323,14 @@ def run_optimization(pack, inputs):
 def run_snake(pack, inputs):
     best_solution = snake_pattern_row_pairs(pack)
     best_solution.display(save=False)
-    # bridges = all_bridges(best_solution.pack, best_solution.cell_to_group)
-    # result = solve(best_solution.cell_to_group, bridges, r_cell=1.0, r_per_length=0.01, I=8)
-    # je = junction_estimate(bridges, best_solution.cell_to_group, r_per_length=0.01)
-    # print_result(result, bridges, junction=je)  
-    # nom = result['nominal_current']
-    # draw_bridges(best_solution, bridges, currents=[c / nom for c in result['bridge_currents']], label='struja mosta / nazivna struja ćelije (I/P)', save=True, name='slike/snake_double_bridges.png', show=True, vmax=3)
-    
+    bridges = all_bridges(best_solution.pack, best_solution.cell_to_group)
+    result = solve(best_solution.cell_to_group, bridges, r_cell=CELL_SPECS[pack.cell_type]['R_cell'], r_per_length=R_PER_LENGTH, I=pack.no_cells_per_group)
+    je = junction_estimate(bridges, best_solution.cell_to_group, r_per_length=0.01)
+    print_result(result, bridges, junction=je)  
+    nom = result['nominal_current']
+    draw_bridges(best_solution, bridges, currents=[c / nom for c in result['bridge_currents']], label='struja mosta / nazivna struja ćelije (I/P)', save=True, name='slike/snake_double_bridges.png', show=True, vmax=3)
+    save_battery_solution(best_solution, inputs,  'rjesenja/experiment/snake_2.pkl')
+
 
 if __name__ == "__main__":
     inputs = get_user_inputs()
@@ -334,3 +338,4 @@ if __name__ == "__main__":
     interactive_cell_removal_and_voltage_setup(pack)
     run_optimization(pack, inputs)
     #run_snake(pack,inputs)
+    #input()

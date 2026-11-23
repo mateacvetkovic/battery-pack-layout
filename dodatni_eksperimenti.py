@@ -178,11 +178,12 @@ def save_legend(no_groups, n_segments=1, path='slike/legend.pdf', ncol=8):
     cmap = plt.get_cmap('nipy_spectral')
     handles = [Patch(facecolor=cmap(0.08 + 0.8 * g / max(1, no_groups - 1)), edgecolor='black', alpha=0.6, label=f'G{g}')
                for g in range(no_groups)]
-    handles += [Patch(facecolor='black', edgecolor='black', alpha=0.6, label='BMS'),
+    handles += [#Patch(facecolor='black', edgecolor='black', alpha=0.6, label='BMS'),
                 Patch(facecolor='grey', edgecolor='black', alpha=0.6, label='Unused'),
-                Line2D([], [], marker='o', ls='', markerfacecolor='none', markeredgecolor='red',
-                       markeredgewidth=2, markersize=9, label='Cell current > 1.03'),
-                Line2D([], [], color=SEG_CMAP(0.5), lw=4, path_effects=[], label=f'{n_segments} highest segment currents')]
+                # Line2D([], [], marker='o', ls='', markerfacecolor='none', markeredgecolor='red',
+                #        markeredgewidth=2, markersize=9, label='Cell current > 1.03'),
+                # Line2D([], [], color=SEG_CMAP(0.5), lw=4, path_effects=[], label=f'{n_segments} highest segment currents')
+                ]
     fig = plt.figure(figsize=(7, 0.6))
     fig.legend(handles=handles, loc='center', ncol=ncol, fontsize=7, frameon=False)
     fig.savefig(path, bbox_inches='tight')
@@ -338,7 +339,7 @@ if __name__ == '__main__':
     #param_study('rjesenja/svipaketi.json', ['pravokutni_trokut_B'], 'parametri_tri6.csv', runs=1, iterations=5)
     # param_study('rjesenja/svipaketi.json', ['trokut_3'], 'parametri_tri2.csv') 
 
-    population_snapshot('rjesenja/svipaketi.json', 'pravokutnik_1', 'populacija_rect1.csv')   # Triangle 6    d = pd.read_csv('populacija_tri6.csv')
+    #population_snapshot('rjesenja/svipaketi.json', 'pravokutnik_1', 'populacija_rect1.csv')   # Triangle 6    d = pd.read_csv('populacija_tri6.csv')
     #d = pd.read_csv('populacija_tri4.csv')
 
 
@@ -357,4 +358,12 @@ if __name__ == '__main__':
     # fig.tight_layout()
     # fig.savefig('slike/population.pdf')
     # plot_convergence()
-    
+
+    folder = 'rjesenja/experiment/'
+    R_CELL_MEASURED = 0.045             # ohm, iz mjerenja
+    R_PER_LENGTH_015 = 6.99e-5 / (0.15 * 7)  # ohm/mm, traka 0.15 x 7 mm
+    for path in sorted(glob.glob(os.path.join(folder, '**', '*.pkl'), recursive=True)):
+        with open(path, 'rb') as f:
+            sol = pickle.load(f)['solution']
+        metric = real_metrics(sol, R_CELL_MEASURED, R_PER_LENGTH_015, selected=False, I = 2.1 )
+        print(f"{os.path.basename(path)}: R_total = {metric['R_total'] * 1000:.1f} mOhm")

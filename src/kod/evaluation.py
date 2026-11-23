@@ -25,11 +25,13 @@ R_CELL = 0.05            # Ω
 R_PER_LENGTH = 3.328e-5  # Ω po jedinici duljine (duljine mostova su u mm)
 
 
-def real_metrics(sol, r_cell=R_CELL, r_per_length=R_PER_LENGTH, selected=True, cell_limit=1.02):
+def real_metrics(sol, r_cell=R_CELL, r_per_length=R_PER_LENGTH, selected=True, cell_limit=1.02, I=None):
     """Stvarne mjere dizajna iz solvera.
     selected=True: granični mostovi koje je heuristika odabrala (sol.bridge_results, treba izračunat fitness) + mostovi unutar grupe.
     selected=False: izgrađeni su SVI mogući mostovi (all_bridges), bridge_results se ne koristi."""
     pack, ctg = sol.pack, sol.cell_to_group
+    if I is None:
+        I = pack.no_cells_per_group
     cells = pack.grid.cells
     dist = lambda c, m: float(np.hypot(cells[c].x - cells[m].x, cells[c].y - cells[m].y))
     if selected:
@@ -39,7 +41,7 @@ def real_metrics(sol, r_cell=R_CELL, r_per_length=R_PER_LENGTH, selected=True, c
                 bridges.append({'a': [c1, 'n'], 'b': [c2, 'p'], 'length': dist(c1, c2)})
     else:
         bridges = all_bridges(pack, ctg)
-    res = solve(ctg, bridges, r_cell, r_per_length, pack.no_cells_per_group)  # I = P, pa je nazivna struja 1
+    res = solve(ctg, bridges, r_cell, r_per_length, I )  # I = P, pa je nazivna struja 1
     nom = res['nominal_current']
     skip = set(res['shorted_bridges'])  # idealni krajevi paketa nose 0 po pretpostavci
     cells_r = np.array(list(res['cell_currents'].values())) / nom

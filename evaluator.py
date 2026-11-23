@@ -30,25 +30,32 @@ from src.kod.evaluation import baseline_table, load_packs
 # baseline_table('rjesenja/paketi copy.json', clonalg_seeds=(0,15,100),
 #                 w_split_values=(1000,0), csv_path='baseline_rect.csv', save_dir='rjesenja_baseline/rect')
 
-
+import matplotlib.pyplot as plt
 
 def draw_all(folder, vmax=3):
     for path in sorted(glob.glob(os.path.join(folder, '*.pkl'))):
         with open(path, 'rb') as f:
             sol = pickle.load(f)['solution']
         base = path[:-4]
-        sol.display(save=True, show=False, name=base + '.png')  # raspored ćelija po grupama
-        bridges = all_bridges(sol.pack, sol.cell_to_group)  # svi mogući mostovi, kao u main.py
-        res = solve(sol.cell_to_group, bridges, R_CELL, R_PER_LENGTH, sol.pack.no_cells_per_group)
-        nom = res['nominal_current']
-        draw_bridges(sol, bridges, currents=[c / nom for c in res['bridge_currents']], vmax=vmax,
-                    label='struja mosta / nazivna struja ćelije (I/P)', save=True, name=base + '_mostovi.png', show=False)
-        print('nacrtano:', os.path.basename(base))
+        sol.display(save=False, show=False, name=base + '.pdf')  # raspored ćelija po grupama
+        ax = plt.gca()
+        ax.get_legend().remove()  # legenda grupa ide u zasebnu sliku
 
+        ax.invert_xaxis()    # zrcaljenje lijevo-desno
+        #ax.invert_yaxis() 
+        plt.savefig(base + '.pdf', bbox_inches='tight')
+        # bridges = all_bridges(sol.pack, sol.cell_to_group)  # svi mogući mostovi, kao u main.py
+        # res = solve(sol.cell_to_group, bridges, R_CELL, R_PER_LENGTH, sol.pack.no_cells_per_group)
+        # nom = res['nominal_current']
+        # draw_bridges(sol, bridges, currents=[c / nom for c in res['bridge_currents']], vmax=vmax,
+        #             label='struja mosta / nazivna struja ćelije (I/P)', save=True, name=base + '_mostovi.pdf', show=False)
+        # print('nacrtano:', os.path.basename(base))
 
-# if __name__ == '__main__':
-#     draw_all(sys.argv[1] if len(sys.argv) > 1 else 'rjesenja_baseline/rect')
+from dodatni_eksperimenti import save_legend
 
+if __name__ == '__main__':
+    draw_all(sys.argv[1] if len(sys.argv) > 1 else 'rjesenja/experiment/')
+    save_legend(7, n_segments=1, path='rjesenja/experiment/legend.pdf', ncol=8)
 
 
 """
@@ -104,6 +111,6 @@ def run(groups=None, probno=False):
                 print(f'[{group}] {name}: greška, nastavljam s idućim paketom', flush=True)
 
 
-if __name__ == '__main__':
-    args = sys.argv[1:]
-    run(groups={a for a in args if a != 'probno'} or None, probno='probno' in args)
+# if __name__ == '__main__':
+#     args = sys.argv[1:]
+#     run(groups={a for a in args if a != 'probno'} or None, probno='probno' in args)

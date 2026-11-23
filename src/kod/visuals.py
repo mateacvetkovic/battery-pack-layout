@@ -38,10 +38,10 @@ def _finalize_plot(ax, W, H, title, save, name, show):
     # ax.set_ylim(-5, H + 0.1 * H)
     ax.autoscale_view()
     ax.margins(0.03)
-    ax.set_xlabel('Width (mm)', fontsize=16, fontweight='bold')
-    ax.set_ylabel('Height (mm)', fontsize=16, fontweight='bold')
+    ax.set_xlabel('Width (mm)', fontsize=22, fontweight='bold')
+    ax.set_ylabel('Height (mm)', fontsize=22, fontweight='bold')
     ax.set_aspect('equal')
-    ax.set_title('{}'.format(title), fontsize=16)
+    ax.set_title('{}'.format(title), fontsize=22)
     if save:
         plt.savefig(name,bbox_inches="tight")
     if show:
@@ -66,11 +66,11 @@ def plotGrid(cells, W, H, d, cell_d=None, save=False, show=True, name='battery_p
                 c_label = 'BMS' if 'BMS' not in added_labels else None
                 added_labels.add('BMS')
                 circle_color = 'black'
-                ax.text(x, y, "BMS", fontsize=12, ha='center', va='center', color='white', fontweight='bold', zorder=7)
+                ax.text(x, y, "BMS", fontsize=16, ha='center', va='center', color='white', fontweight='bold', zorder=7)
             else:
                 c_label = 'Free cells' if 'FREE' not in added_labels else None
                 added_labels.add('FREE')
-                ax.text(x, y, f"{cell.id}", fontsize=12, ha='center', va='center', color='grey', fontweight='bold', zorder=7)
+                ax.text(x, y, f"{cell.id}", fontsize=16, ha='center', va='center', color='grey', fontweight='bold', zorder=7)
             
             ax.add_patch(patches.Circle((x, y), cell_d/2, edgecolor='black', facecolor=circle_color, alpha=0.6, label = c_label))
 
@@ -103,12 +103,12 @@ def plotGroups(cells, W, H, d, cell_to_group, no_groups,  cell_d=None, save=Fals
                 circle_color = 'black'
                 c_label = 'BMS' if 'BMS' not in added_labels else None
                 added_labels.add('BMS')
-                ax.text(x, y, "BMS", fontsize=8, color='white', ha='center', va='center', fontweight='bold', zorder=7)
+                ax.text(x, y, "BMS", fontsize=20, color='white', ha='center', va='center', fontweight='bold', zorder=7)
             elif current_group is None or current_group == -1:
                 circle_color = 'grey'
                 c_label = 'Free cells' if 'FREE' not in added_labels else None
                 added_labels.add('FREE')
-                ax.text(x, y, f"C{cell.id}", fontsize=12, ha='center', va='center', color='black', fontweight='bold', zorder=7)
+                ax.text(x, y, f"C{cell.id}", fontsize=20, ha='center', va='center', color='black', fontweight='bold', zorder=7)
             else:
                 norm_group = current_group / max(1, no_groups)
                 # circle_color = cmap(norm_group)
@@ -116,7 +116,7 @@ def plotGroups(cells, W, H, d, cell_to_group, no_groups,  cell_d=None, save=Fals
                 group_key = f'G_{current_group}'
                 c_label = f'Group {current_group}' if group_key not in added_labels else None
                 added_labels.add(group_key)
-                ax.text(x, y, f"G{current_group}", fontsize=12, ha='center', va='center', zorder=6)
+                ax.text(x, y, f"G{current_group}", fontsize=20, ha='center', va='center', zorder=6)
                 #ax.text(x, y, f"C{cell.id}", fontsize=12, ha='center', va='center', zorder=6, label=f'Group {current_group}')
             ax.add_patch(patches.Circle((x, y), cell_d/2, edgecolor='black', facecolor=circle_color, alpha=0.6, label=c_label))
     handles, labels = ax.get_legend_handles_labels()
@@ -135,7 +135,7 @@ def plotGroups(cells, W, H, d, cell_to_group, no_groups,  cell_d=None, save=Fals
         fontsize=14,
         title_fontsize=14
     )
-    ax.tick_params(axis='both', which='major', labelsize=12)
+    ax.tick_params(axis='both', which='major', labelsize=22)
     _finalize_plot(ax, W, H, title, save, name, show)
 
 
