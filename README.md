@@ -16,16 +16,22 @@ All commands below are run from the repository root with `uv run`, which uses th
 ## Reproducing the paper
 
 Each experiment writes raw rows (one per run) to `results/`; each table or figure script only reads them.
-Every stochastic run uses seed `100 + k` for run `k` (`src/kod/config.py`), and the seed is stored in every row.
+Stochastic runs use seed `100 + k` for run `k` (`SEED_BASE` in `src/kod/config.py`), and the seed is stored in every row.
+Exceptions: Fig. 8 uses the seeds listed in `SEEDS` in `experiments/run_convergence.py`; the CLONALG 7S3P layout
+(Fig. 9) was produced with the interactive `main.py` without a recorded seed, so it is provided as a stored solution
+(`results/fig9_experiment/clonalg_7S3P.pkl|json`) rather than regenerated.
 `results/<experiment>/meta.json` records the git commit, library versions and settings of the run.
 
 | Paper | Experiment (slow) | Table / figure (seconds) |
 |---|---|---|
+| Fig. 2 | (stored layout `results/fig2_perfect_layout/rectangle_9_14.pkl`) | `figures/fig2_perfect_layout.py` |
+| Fig. 6 | – | `figures/fig6_heuristics_layout.py` |
 | Table 2, Table 3 | `experiments/run_baseline.py` | `tables/table2_baseline.py`, `tables/table3_split.py` |
 | Table 4 | `experiments/run_timing.py` | `tables/table4_timing.py` |
-| Fig. 2 | (uses Table 2 solutions) | `figures/fig2_layouts.py` |
-| Fig. 3 | `experiments/run_convergence.py` | `figures/fig3_convergence.py` |
-| Fig. 4, Table 5 (model column) | `experiments/run_assembled_packs.py` | `figures/fig4_layouts.py` |
+| Fig. 7 | (uses Table 2 solutions) | `figures/fig7_layouts.py` |
+| Fig. 8 | `experiments/run_convergence.py` | `figures/fig8_convergence.py` |
+| Fig. 9, Table 5 (model column) | `experiments/run_assembled_packs.py` | `figures/fig9_layouts.py` |
+| Table 5 (measured column) | measurement data in `data/measurements/` | `experiments/read_measurement.py <folder>` |
 
 Example:
 
@@ -33,9 +39,14 @@ Example:
     uv run python experiments/run_baseline.py                    # full Table 2 and 3 (hours)
     uv run python tables/table2_baseline.py                      # -> paper_tables/table2_baseline.csv
 
-Table and figure scripts read every `*.csv` in the experiment folder, so move old results away before re-running an experiment.
+Re-running: `run_baseline.py` skips packs whose CSV already exists (delete it to recompute);
+`run_convergence.py` and `run_timing.py` overwrite their CSV, so run them without arguments to keep all packs.
+Table and figure scripts read the CSV files in the experiment folder, so do not leave copies of old results there.
+
 Pack definitions are in `data/packages.json`; code names and paper names (e.g. `trokut_2` = Triangle 1) are in `data/pack_names.csv`.
 Timings in Table 4 depend on the machine; iteration counts and solutions do not.
+
+Not included: photographs of the assembled packs (Fig. 9b, 9d).
 
 ## Layout
 
@@ -52,9 +63,14 @@ Timings in Table 4 depend on the machine; iteration counts and solutions do not.
       visuals.py        plotting
     experiments/    one script per experiment
     tables/         one script per table
-    figures/        one script per figure
+    figures/        one script per figure; draw_solutions.py is a helper that draws all Table 2 solutions of one pack
     examples/       small standalone examples
-    data/           pack definitions
+    data/           pack definitions and measurement data
     results/        raw results used in the paper (see results/README.md)
+    paper_tables/   tables as used in the paper
     paper_figures/  figures as used in the paper
     main.py         interactive program (cell removal for BMS, voltage selection, optimization)
+
+## License and citation
+
+MIT, see `LICENSE`. If you use this code, please cite the paper (reference will be added after publication).
