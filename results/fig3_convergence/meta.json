@@ -1,0 +1,35 @@
+{
+ "date": "2026-11-25T12:59:11",
+ "command": "experiments/run_convergence.py",
+ "git_commit": "21df5fdad8168deebfdc95b6303293ab42e2e0f5",
+ "git_dirty": true,
+ "python": "3.14.4",
+ "numpy": "2.5.4",
+ "scipy": "1.18.1",
+ "platform": "Linux-7.0.0-43-generic-x86_64-with-glibc2.43",
+ "processor": "",
+ "clonalg": {
+  "max_iterations": 500,
+  "population_size": 50,
+  "clones_per_antibody": 5,
+  "d_new_individuals": 12,
+  "stag_iter": 100
+ },
+ "seeds": {
+  "trokut_5": [
+   100,
+   101,
+   99998
+  ],
+  "pravokutni_trokut_B": [
+   100,
+   101,
+   102
+  ]
+ },
+ "packs": [
+  "trokut_5",
+  "pravokutni_trokut_B"
+ ],
+ "w_far": 0
+}

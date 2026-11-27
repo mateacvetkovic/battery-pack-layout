@@ -37,7 +37,7 @@ OUT = 'results/table2_table3_baseline'
 PLAN = {
     'trokut_2': (10, (0, 1000)), 'trokut_3': (5, (0, 1000)), 'trokut_4': (10, (0, 1000)), 'trokut_5': (5, (0, 1000)),
     'pravokutnik_1': (3, (0,)), 'pravokutnik_2': (10, (0, 1000)), 'pravokutnik_3': (5, (0, 1000)),
-    'pravokutni_trokut_A': (10, (0,)), 'pravokutni_trokut_B': (3, (0,)), 'pravokutni_trokut_C_bms': (10, (0,)),
+    'pravokutni_trokut_A': (10, (0,)), 'pravokutni_trokut_B': (10, (0,)), 'pravokutni_trokut_C_bms': (10, (0,)),
     'pravokutni_pravokutnik_A': (3, (0,)), 'pravokutni_pravokutnik_B_bms': (3, (0,)), 'pravokutni_pravokutnik_C': (3, (0,)),
     'trokut_21700': (5, (0,)),
 }
@@ -63,6 +63,7 @@ def run_pack(p, runs, w_splits, opt):
         if sol:
             sols[(key, 0)] = (sol, None)
     for k in range(runs):
+        print(f"Starting run {k}/{runs}.")
         seed = SEED_BASE + k
         random.seed(seed); np.random.seed(seed)
         init = [x for x in clonalg.generate_initial_population(pk, opt['population_size'], snakes=False) if x.fitness > -float('inf')]

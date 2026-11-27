@@ -1,0 +1,7 @@
+Method,Metric,Min,Min pack,Max,Max pack,Packs
+Split = no,dIc_max (%),1.12,Triangle 4,3.55,Rectangle 2,6
+Split = no,Is_max,1.46,Triangle 4,1.98,Triangle 1,6
+Split = no,N_split,0.0,Triangle 1; Triangle 2; Triangle 3; Triangle 4; Rectangle 2; Rectangle 3,0.0,Triangle 1; Triangle 2; Triangle 3; Triangle 4; Rectangle 2; Rectangle 3,6
+Split = yes,dIc_max (%),0.83,Rectangle 3,2.93,Triangle 3,6
+Split = yes,Is_max,1.00,Rectangle 2; Rectangle 3,1.98,Triangle 1,6
+Split = yes,N_split,0.1,Triangle 1,11.0,Triangle 4,6

@@ -248,13 +248,13 @@ def save_colorbar(path):
     cax.xaxis.set_major_locator(FixedLocator(SEG_TICKS))
     cax.xaxis.set_major_formatter(FixedFormatter([str(t) for t in SEG_TICKS]))
     cax.xaxis.set_minor_locator(FixedLocator([]))
-    cax.set_xlabel('Segment current / nominal cell current', fontsize=7)
-    cax.tick_params(labelsize=7)
+    cax.set_xlabel('Segment current / nominal cell current', fontsize=10)
+    cax.tick_params(labelsize=10)
     fig.savefig(path, bbox_inches='tight')
     plt.close(fig)
 
 
-def save_legend(no_groups, path, ncol=8, bms=False, n_segments=None):
+def save_legend(no_groups, path, ncol=8, bms=False, n_segments=None, bridges=False):
     """Jedna legenda za sve panele; boje grupa iste kao u plotGroups.
     bms: dodaje BMS; n_segments: dodaje oznake za preopterećene ćelije i n_segments najjačih segmenata (Slika 2)."""
     cmap = plt.get_cmap('nipy_spectral')
@@ -267,7 +267,10 @@ def save_legend(no_groups, path, ncol=8, bms=False, n_segments=None):
         handles += [Line2D([], [], marker='o', ls='', markerfacecolor='none', markeredgecolor='red',
                            markeredgewidth=2, markersize=9, label='Cell current > 1.03'),
                     Line2D([], [], color=SEG_CMAP(0.5), lw=4, label=f'{n_segments} highest segment currents')]
+    if bridges:
+        handles += [Line2D([], [], color='tab:green', lw=2.5, label='Connection within a group'),
+                    Line2D([], [], color='black', lw=2.5, marker='o', markersize=4, label='Connection between groups')]
     fig = plt.figure(figsize=(7, 0.6))
-    fig.legend(handles=handles, loc='center', ncol=ncol, fontsize=7, frameon=False)
+    fig.legend(handles=handles, loc='center', ncol=ncol, fontsize=14, frameon=False)
     fig.savefig(path, bbox_inches='tight')
     plt.close(fig)

@@ -12,3 +12,5 @@ wheels/
 # izlaz interaktivnog main.py i lokalni otpad
 interactive_runs/
 _za_brisanje/
+
+*.pdf

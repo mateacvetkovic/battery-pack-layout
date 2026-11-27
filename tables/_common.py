@@ -43,3 +43,18 @@ def write_table(path, header, rows):
     for r in [header] + rows:
         print('  '.join(str(x).ljust(wd) for x, wd in zip(r, widths)))
     print(f'-> {path}')
+
+
+def write_extremes(path, records, fmt):
+    """Za svaku metodu i mjeru najmanja i najveća srednja vrijednost (kako je u tablici) i paket(i) na kojem je.
+    records: lista (metoda, paket, mjera, srednja vrijednost); fmt: {mjera: format}. Kod izjednačenja svi paketi."""
+    out = []
+    for method in dict.fromkeys(r[0] for r in records):
+        for metric in dict.fromkeys(r[2] for r in records):
+            sel = [(p, v) for m, p, mt, v in records if m == method and mt == metric and v is not None]
+            if not sel:
+                continue
+            lo, hi = min(v for _, v in sel), max(v for _, v in sel)
+            out.append([method, metric, fmt[metric].format(lo), '; '.join(p for p, v in sel if v == lo),
+                        fmt[metric].format(hi), '; '.join(p for p, v in sel if v == hi), len(sel)])
+    write_table(path, ['Method', 'Metric', 'Min', 'Min pack', 'Max', 'Max pack', 'Packs'], out)

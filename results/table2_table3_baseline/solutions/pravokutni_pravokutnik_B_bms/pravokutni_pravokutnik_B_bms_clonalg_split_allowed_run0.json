@@ -75,5 +75,5 @@
  ],
  "method": "CLONALG w_split=0",
  "run": 0,
- "seed": "nepoznat (stari kod nije bio deterministički)"
+ "seed": 100
 }

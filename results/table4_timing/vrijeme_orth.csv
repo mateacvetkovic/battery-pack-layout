@@ -1,7 +1,0 @@
-pack,run,S,P,iterations_to_best,iterations_total,time_to_best_s,time_total_s,phase2
-pravokutni_trokut_B,0,10,6,166,216,184.2,238.8,True
-pravokutni_trokut_B,1,10,6,68,169,75.1,180.6,True
-pravokutni_trokut_B,2,10,6,154,204,162.7,214.6,True
-pravokutni_pravokutnik_A,0,8,5,1,51,2.0,36.7,False
-pravokutni_pravokutnik_A,1,8,5,1,51,1.8,36.1,False
-pravokutni_pravokutnik_A,2,8,5,1,51,1.8,36.7,False

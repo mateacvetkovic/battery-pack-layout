@@ -227,7 +227,7 @@
   3,
   2,
   1,
-  1,
+  0,
   13,
   12,
   11,
@@ -273,11 +273,11 @@
   3,
   2,
   1,
-  0,
+  1,
   -1,
   -1
  ],
  "method": "CLONALG w_split=0",
  "run": 5,
- "seed": "nepoznat (stari kod nije bio deterministički)"
+ "seed": 105
 }

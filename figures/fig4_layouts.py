@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from kod.storage import load_solution
 from kod.visuals import save_legend
 
+
 IN = 'results/fig4_experiment'
 OUT = 'paper_figures'
 # (rješenje, izlaz, zrcaljenje)
@@ -24,7 +25,7 @@ def main():
         ax.invert_xaxis() if flip == 'x' else ax.invert_yaxis()
         plt.savefig(f'{OUT}/{out}', bbox_inches='tight')
         plt.close('all')
-    save_legend(sol.pack.no_groups, f'{OUT}/fig4_legend.pdf', ncol=8)
+    save_legend(sol.pack.no_groups, f'{OUT}/fig4_legend.pdf', ncol=4)
 
 
 if __name__ == '__main__':

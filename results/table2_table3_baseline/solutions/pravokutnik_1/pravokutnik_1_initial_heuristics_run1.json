@@ -117,5 +117,5 @@
  ],
  "method": "početna heuristika",
  "run": 1,
- "seed": "nepoznat (stari kod nije bio deterministički)"
+ "seed": 101
 }

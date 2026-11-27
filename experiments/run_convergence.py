@@ -1,4 +1,5 @@
-"""Slika 3: prosječni fitness populacije po iteraciji, 3 pokretanja, samo prva faza (w_far = 0), stagnacija 100.
+"""Slika 3: prosječni fitness populacije po iteraciji, samo prva faza (w_far = 0), stagnacija 100.
+Seedovi po paketu su u SEEDS.
 
     uv run python experiments/run_convergence.py
 
@@ -14,22 +15,22 @@ matplotlib.use('Agg')
 
 from kod.BatteryPack import load_packs
 from kod.clonalg import ClonalgOptimizer
-from kod.config import CLONALG_CONVERGENCE, SEED_BASE
+from kod.config import CLONALG_CONVERGENCE
 from kod.storage import write_meta, write_rows
 
 OUT = 'results/fig3_convergence'
-PACKS = ['trokut_5', 'pravokutni_trokut_B']   # Triangle 4 i Triangle 6
-RUNS = 3
+# Triangle 4 i Triangle 6; pokretanje k koristi SEEDS[paket][k]
+SEEDS = {'trokut_5': [100, 101, 99998], 'pravokutni_trokut_B': [100, 101, 102]}
+#SEEDS = {'trokut_5': [102]}
 
 
 def main():
-    names = sys.argv[1:] or PACKS
-    write_meta(OUT, clonalg=CLONALG_CONVERGENCE, seed_base=SEED_BASE, runs=RUNS, packs=names, w_far=0)
+    names = sys.argv[1:] or list(SEEDS)
+    write_meta(OUT, clonalg=CLONALG_CONVERGENCE, seeds={n: SEEDS[n] for n in names}, packs=names, w_far=0)
     packs = load_packs('data/packages.json', names=names)
     rows = []
     for name in names:
-        for run in range(RUNS):
-            seed = SEED_BASE + run
+        for run, seed in enumerate(SEEDS[name]):
             random.seed(seed); np.random.seed(seed)
             opt = ClonalgOptimizer(packs[name]['pack'], **CLONALG_CONVERGENCE)
             t0 = time.time()
@@ -44,8 +45,8 @@ def main():
                              'best_fitness': h['best_population_fitness'], 'mean_fitness': means[min(i, len(means) - 1)],
                              'iterations_total': len(opt.history), 'time_s': round(seconds, 1),
                              'fitness_std': h.get('fitness_std'), 'diversity': h.get('diversity')})
-            print(f'{name} run {run}: {len(opt.history)} iteracija, {seconds:.0f} s', file=sys.stderr, flush=True)
-    write_rows(f'{OUT}/convergence.csv', rows)
+            print(f'{name} run {run} (seed {seed}): {len(opt.history)} iteracija, {seconds:.0f} s', file=sys.stderr, flush=True)
+    write_rows(f'{OUT}/convergence2.csv', rows)
 
 
 if __name__ == '__main__':

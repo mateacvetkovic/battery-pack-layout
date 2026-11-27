@@ -122,5 +122,5 @@
  ],
  "method": "CLONALG w_split=0",
  "run": 8,
- "seed": "nepoznat (stari kod nije bio deterministički)"
+ "seed": 108
 }
