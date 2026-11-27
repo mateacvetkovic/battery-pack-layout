@@ -20,7 +20,7 @@ from kod.visuals import draw_bridges
 
 R_PER_LENGTH = strip_r_per_length(0.15)   # 0.15 x 7 mm strip, as in the assembled packs
 OUT_DIR = 'interactive_runs'
-
+NET_LABELS = {'saćasti': 'hexagonal', 'pravokutni': 'orthogonal'}   # display names only; the code uses the original values
 
 def get_user_inputs():
     print("=" * 60)
@@ -55,7 +55,7 @@ def get_user_inputs():
     while True:
         print("\n[3/4] Select the grid type:")
         for idx, net in enumerate(ALLOWED_NET_TYPES, 1):
-            print(f"  {idx}. {net}")
+            print(f"  {idx}. {NET_LABELS.get(net, net)}")
         try:
             n_choice = int(input("Input: ")) - 1
             if 0 <= n_choice < len(ALLOWED_NET_TYPES):
