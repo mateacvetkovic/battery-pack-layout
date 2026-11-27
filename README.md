@@ -72,4 +72,3 @@ Not included: photographs of the assembled packs (Fig. 9b, 9d).
 
 ## License and citation
 
-MIT, see `LICENSE`. If you use this code, please cite the paper (reference will be added after publication).
