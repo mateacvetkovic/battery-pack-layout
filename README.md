@@ -20,7 +20,6 @@ Stochastic runs use seed `100 + k` for run `k` (`SEED_BASE` in `src/kod/config.p
 Exceptions: Fig. 8 uses the seeds listed in `SEEDS` in `experiments/run_convergence.py`; the CLONALG 7S3P layout
 (Fig. 9) was produced with the interactive `main.py` without a recorded seed, so it is provided as a stored solution
 (`results/fig9_experiment/clonalg_7S3P.pkl|json`) rather than regenerated.
-`results/<experiment>/meta.json` records the git commit, library versions and settings of the run.
 
 | Paper | Experiment (slow) | Table / figure (seconds) |
 |---|---|---|
