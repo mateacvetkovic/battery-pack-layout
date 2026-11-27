@@ -1,11 +1,11 @@
-"""Tablica 5, stupac "Model": razlika otpora snake i CLONALG paketa 7S3P po električnom modelu.
+"""Table 5, column "Model": resistance difference between the snake and CLONALG 7S3P packs according to the electrical model.
 
     uv run python experiments/run_assembled_packs.py
 
-Rasporedi su ulaz, ne rezultat ove skripte: to su točno oni paketi koji su sastavljeni i izmjereni
-(results/fig4_experiment/*.pkl|json). Snake je jednostavan snake po redovima (heuristics.snake_pattern_rows),
-CLONALG raspored je iz interaktivnog main.py. Otpori: config.ASSEMBLED (traka 0.15 x 7 mm, R_cell 45 mOhm).
-Izlaz: results/fig4_experiment/model_resistance.csv
+The layouts are inputs, not results of this script: they are exactly the packs that were assembled and measured
+(results/fig9_experiment/*.pkl|json). Snake is the plain row-wise snake (heuristics.snake_pattern_rows);
+the CLONALG layout comes from the interactive main.py. Resistances: config.ASSEMBLED (strip 0.15 x 7 mm, R_cell 45 mOhm).
+Output: results/fig9_experiment/model_resistance.csv
 """
 import matplotlib
 matplotlib.use('Agg')
@@ -14,7 +14,7 @@ from kod.config import ASSEMBLED
 from kod.metrics import real_metrics
 from kod.storage import load_solution, write_rows
 
-FOLDER = 'results/fig4_experiment'
+FOLDER = 'results/fig9_experiment'
 
 
 def main():

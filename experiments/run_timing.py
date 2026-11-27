@@ -1,9 +1,9 @@
-"""Tablica 4: vrijeme CLONALG-a s postavkama iz Tablice 2 (obje faze), 3 pokretanja po paketu.
+"""Table 4: CLONALG run time with the Table 2 settings (both phases), 3 runs per pack.
 
     uv run python experiments/run_timing.py
 
-Izlaz: results/table4_timing/timing.csv (jedan redak po pokretanju) i meta.json (procesor, verzije).
-Vremena ovise o računalu; ponovljivi su broj iteracija i rješenja, ne sekunde.
+Output: results/table4_timing/timing.csv (one row per run) and meta.json (processor, versions).
+Times depend on the machine; the number of iterations and the solutions are reproducible, the seconds are not.
 """
 import random
 import sys
@@ -24,14 +24,14 @@ RUNS = 3
 
 
 def time_run(pack, seed):
-    """Jedno pokretanje. Vrijeme do najboljeg = zadnje poboljšanje u fazi iz koje je konačno rješenje."""
+    """A single run. Time to best = the last improvement in the phase that produced the final solution."""
     random.seed(seed); np.random.seed(seed)
     opt = ClonalgOptimizer(pack, **CLONALG_PAPER)
     t0 = time.time()
     opt.run()
     total = time.time() - t0
     h = opt.history
-    # podjela na faze: brojač iteracija kreće ispočetka u drugoj fazi
+    # split into phases: the iteration counter restarts in the second phase
     start = max([i for i in range(len(h)) if h[i]['iteration'] == 1] or [0])
     phases = [(0, h[:start]), (start, h[start:])] if start > 0 else [(0, h)]
     k_best = 0
@@ -56,7 +56,7 @@ def main():
             rows.append({'pack': name, 'run': run, 'seed': seed, 'S': pk.no_groups, 'P': pk.no_cells_per_group,
                          'Nu': pk.usable_cells, **time_run(pk, seed)})
             print(rows[-1], file=sys.stderr, flush=True)
-            write_rows(f'{OUT}/timing.csv', rows)  # nakon svakog pokretanja
+            write_rows(f'{OUT}/timing.csv', rows)  # after every run
 
 
 if __name__ == '__main__':

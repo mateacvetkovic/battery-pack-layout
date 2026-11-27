@@ -7,4 +7,3 @@ for path in sorted(glob.glob('results/table2_table3_baseline/*.csv')):
     for r in csv.DictReader(open(path, encoding='utf-8')):
         if r['metoda'].startswith('CLONALG') and int(r['total_bridges']) == IDEAL[r['pack']]:
             print(r['pack'], r['metoda'], 'run', r['run'], 'seed', r['seed'])
-print('nista')

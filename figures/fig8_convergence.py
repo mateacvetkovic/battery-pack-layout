@@ -1,6 +1,6 @@
-"""Slika 3: prosječni (puna crta) i najbolji (isprekidano) fitness populacije u 3 pokretanja za Triangle 4 i Triangle 6.
+"""Figure 8: mean (solid) and best (dashed) population fitness in 3 runs for Triangle 4 and Triangle 6.
 
-    uv run python figures/fig3_convergence.py
+    uv run python figures/fig8_convergence.py
 """
 import csv
 import glob
@@ -13,12 +13,12 @@ from matplotlib.lines import Line2D
 
 PACKS = [('trokut_5', 'Triangle 4'), ('pravokutni_trokut_B', 'Triangle 6')]
 COLORS = ['#2a78d6', '#eb6834', '#1baf7a']
-OUT = 'paper_figures/fig3_convergence.pdf'
+OUT = 'paper_figures/fig8_convergence.pdf'
 UPPER = {'trokut_5': 65.0}
 
 def main():
-    runs = defaultdict(list)   # (paket, pokretanje) -> [(iteracija, prosječni, najbolji)]
-    for path in sorted(glob.glob('results/fig3_convergence/*.csv')):
+    runs = defaultdict(list)   # (pack, run) -> [(iteration, mean, best)]
+    for path in sorted(glob.glob('results/fig8_convergence/convergence.csv')):
         with open(path, encoding='utf-8') as f:
             for r in csv.DictReader(f):
                 runs[(r['pack'], int(r['run']))].append((int(r['iteration']), float(r['mean_fitness']), float(r['best_fitness'])))
@@ -37,7 +37,6 @@ def main():
             xmax = max(xmax, max(it))
         ax.set_title(label, fontsize=9)
         ax.set_xlabel('Iteration', fontsize=8)
-        ax.set_xlim(0, xmax)
         ax.tick_params(labelsize=7)
         ax.grid(alpha=0.3, lw=0.5)
         ax.set_xlim(0, xmax * 1.03)
